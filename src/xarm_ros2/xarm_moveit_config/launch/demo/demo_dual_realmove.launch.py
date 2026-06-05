@@ -79,7 +79,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # Launch RViz
-    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_moveit.rviz'])
+    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_camera_moveit.rviz'])
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',

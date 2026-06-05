@@ -58,14 +58,16 @@ def generate_launch_description():
             os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
         ),
         launch_arguments={
-            'serial_number': 'AY3794301C4',
+            'serial_number': 'AY3794301A0',
             'camera_name': 'L_camera',
             'device_num': '2',
-            'color_width': '640',
-            'color_height': '360',
-            'color_fps': '15',
-            'color_format': 'MJPG',
+            'enable_depth': 'true',
+            'enable_color': 'true',
+            #'enable_left_ir': 'true',
+            #'enable_right_ir': 'true',
+            'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
+
         }.items()
     )
 
@@ -74,13 +76,14 @@ def generate_launch_description():
             os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
         ),
         launch_arguments={
-            'serial_number': 'AY3794301A0',
+            'serial_number': 'AY3794301C4',
             'camera_name': 'R_camera',
             'device_num': '2',
-            'color_width': '640',
-            'color_height': '360',
-            'color_fps': '15',
-            'color_format': 'MJPG',
+            'enable_depth': 'true',
+            'enable_color': 'true',
+            #'enable_left_ir': 'true',
+            #'enable_right_ir': 'true',
+            'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
         }.items(),
     )

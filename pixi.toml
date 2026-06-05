@@ -17,6 +17,7 @@ build = "colcon build"
 reset_build = "rm -rf build/ install/ log/"
 reset_rviz = "mv ~/.rviz ~/.rviz.bak 2>/dev/null && mv ~/.rviz2 ~/.rviz2.bak 2>/dev/null"
 view_frames = "ros2 run tf2_tools view_frames"
+launch_process = "ros2 launch xarm_moveit_config dual_xarm7_moveit_realmove.launch.py"
 
 [dependencies]
 #Core ROS2 packages

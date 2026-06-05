@@ -83,11 +83,44 @@ def generate_launch_description():
             'enable_ir' : 'true',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
+
         }.items(),
+    )
+
+    global_camera = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(orbbec_camera_dir, 'launch', 'femto_bolt.launch.py')
+        ),
+        launch_arguments={
+            'serial_number': 'CL8855301G8',
+            'camera_name': 'G_camera',
+            'enable_depth': 'true',
+            'depth_width': '640',
+            'depth_height': '576',
+            'depth_format': 'Y16',
+            'depth_fps': '30',
+            'enable_color': 'true',
+            'color_width': '1920',     
+            'color_height': '1080',
+            'color_format': 'MJPG',     
+            'color_fps': '30',
+            'enable_ir' : 'true',
+            'ir_width': '640',
+            'ir_height': '576',
+            'ir_format': 'Y16',  
+            'ir_fps': '30',
+            'enable_point_cloud': 'true',
+            'enable_colored_point_cloud': 'true',
+            'depth_registration': 'true',
+            'publish_tf': 'true',
+            'enable_frame_sync': 'true',
+
+        }.items()
     )
 
     return LaunchDescription([
         dual_xarm,
         left_camera,
         TimerAction(period=3.0, actions=[right_camera]),
+        global_camera,
     ])

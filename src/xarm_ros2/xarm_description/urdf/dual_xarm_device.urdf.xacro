@@ -73,7 +73,7 @@
   <xacro:arg name="gripper_version_2" default="G1"/>
   <!-- load xarm device -->
   <xacro:include filename="$(find xarm_description)/urdf/xarm_device_macro.xacro" />
-  <xacro:include filename="$(find xarm_description)/urdf/camera/gemini2_camera.xacro" /> 
+  <xacro:include filename="$(find orbbec_description)/urdf/gemini_2.urdf.xacro" /> 
 
   <xacro:xarm_device prefix="$(arg prefix_1)" hw_ns="$(arg hw_ns)" limited="$(arg limited)"
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
@@ -95,7 +95,7 @@
     baud_checkset="$(arg baud_checkset_1)" default_gripper_baud="$(arg default_gripper_baud_1)"
     model1300="$(arg model1300_1)" robot_sn="$(arg robot_sn_1)" mesh_suffix="$(arg mesh_suffix)" kinematics_suffix="$(arg kinematics_suffix_1)" gripper_version="$(arg gripper_version_1)" />
 
-  <xacro:gemini2_urdf prefix="$(arg prefix_1)" add_gemini2_links="true"/>
+  <xacro:gemini_2 prefix="$(arg prefix_1)" parent="$(arg prefix_1)link_eef"/>
 
   <xacro:xarm_device prefix="$(arg prefix_2)" hw_ns="$(arg hw_ns)" limited="$(arg limited)"
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
@@ -117,6 +117,6 @@
     baud_checkset="$(arg baud_checkset_2)" default_gripper_baud="$(arg default_gripper_baud_2)"
     model1300="$(arg model1300_2)" robot_sn="$(arg robot_sn_2)" mesh_suffix="$(arg mesh_suffix)" kinematics_suffix="$(arg kinematics_suffix_2)" gripper_version="$(arg gripper_version_2)" />
 
-  <xacro:gemini2_urdf prefix="$(arg prefix_2)" add_gemini2_links="true"/>
+  <xacro:gemini_2 prefix="$(arg prefix_2)" parent="$(arg prefix_2)link_eef"/>
 
 </robot>

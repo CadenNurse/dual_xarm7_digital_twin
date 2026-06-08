@@ -62,7 +62,7 @@ def generate_launch_description():
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
-            'publish_tf': 'true',
+            'publish_tf': 'false',
         }.items(),
     )
 
@@ -80,7 +80,7 @@ def generate_launch_description():
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
-            'publish_tf': 'true',
+            'publish_tf': 'false',
         }.items(),
     )
 
@@ -115,42 +115,6 @@ def generate_launch_description():
         }.items(),
     )
 
-    # LEFT wrist camera: parent = Llinkeef, child = L_camera_link
-    left_camera_mount_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='left_camera_mount_tf',
-        arguments=[
-            '--x', '0.00',
-            '--y', '0.00',
-            '--z', '0.10',
-            '--roll', '0.00',
-            '--pitch', '0.00',
-            '--yaw', '0.00',
-            '--frame-id', 'L_link_eef',
-            '--child-frame-id', 'L_camera_link',
-        ],
-        output='screen',
-    )
-
-    # RIGHT wrist camera: parent = Rlinkeef, child = R_camera_link
-    right_camera_mount_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='right_camera_mount_tf',
-        arguments=[
-            '--x', '0.00',
-            '--y', '0.00',
-            '--z', '0.10',
-            '--roll', '0.00',
-            '--pitch', '0.00',
-            '--yaw', '0.00',
-            '--frame-id', 'R_link_eef',
-            '--child-frame-id', 'R_camera_link',
-        ],
-        output='screen',
-    )
-
     # OPTIONAL: global camera fixed in world
     global_camera_mount_tf = Node(
         package='tf2_ros',
@@ -171,11 +135,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         dual_xarm,
-
-        right_camera_mount_tf,
-        left_camera_mount_tf,
-        global_camera_mount_tf,
-
         TimerAction(period=2.0, actions=[right_camera]),
         TimerAction(period=4.0, actions=[left_camera]),
         TimerAction(period=6.0, actions=[global_camera]),

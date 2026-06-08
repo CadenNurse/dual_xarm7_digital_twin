@@ -79,7 +79,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # Launch RViz
-    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_camera_moveit.rviz'])
+    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_moveit_camera.rviz'])
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -138,6 +138,7 @@ def launch_setup(context, *args, **kwargs):
         '{}{}_traj_controller'.format(prefix_2.perform(context), xarm_type_2),
     ]
     
+    #Consider using joint_state_broadcaster instead of joint_state_publisher for better performance
     joint_state_publisher_node = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -166,7 +167,7 @@ def launch_setup(context, *args, **kwargs):
     
     return [
         robot_state_publisher,
-        joint_state_publisher_node,
+        #joint_state_publisher_node,
         move_group_node,
         #static_tf_1,
         #static_tf_2,

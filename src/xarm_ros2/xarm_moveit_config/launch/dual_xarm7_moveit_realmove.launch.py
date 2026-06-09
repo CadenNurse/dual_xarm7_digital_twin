@@ -110,27 +110,9 @@ def generate_launch_description():
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
-            'publish_tf': 'true',
+            'publish_tf': 'false',
             'enable_frame_sync': 'true',
         }.items(),
-    )
-
-    # OPTIONAL: global camera fixed in world
-    global_camera_mount_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='global_camera_mount_tf',
-        arguments=[
-            '--x', '0.526',
-            '--y', '0.290',
-            '--z', '0.905',
-            '--roll', '0.0',
-            '--pitch', '-1.3090',
-            '--yaw', '1.5708',
-            '--frame-id', 'world',
-            '--child-frame-id', 'G_camera_link',
-        ],
-        output='screen',
     )
 
     return LaunchDescription([

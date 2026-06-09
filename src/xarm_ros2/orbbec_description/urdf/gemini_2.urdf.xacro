@@ -38,14 +38,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!--<collision>
         <origin
           xyz="-0.01491 -0.025 -0.0125"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}base_link.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <link name="${prefix}camera_botter_screw_frame">
@@ -73,14 +73,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_botter_screw_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_botter_screw_joint" type="fixed">
@@ -117,14 +117,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_infra1_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_right_ir_joint" type="fixed">
@@ -161,14 +161,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_infra1_optical_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_right_ir_optical_joint" type="fixed">
@@ -205,14 +205,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_color_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_color_joint" type="fixed">
@@ -249,14 +249,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_color_optical_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_color_optical_joint" type="fixed">
@@ -293,14 +293,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_infra2_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_left_ir_joint" type="fixed">
@@ -337,14 +337,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_infra2_optical_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_left_ir_optical_joint" type="fixed">
@@ -381,14 +381,14 @@
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_depth_frame.STL" />
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <joint name="${prefix}camera_depth_joint" type="fixed">

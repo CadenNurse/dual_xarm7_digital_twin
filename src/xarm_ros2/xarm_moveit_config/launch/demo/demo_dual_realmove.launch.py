@@ -167,7 +167,7 @@ def launch_setup(context, *args, **kwargs):
     
     return [
         robot_state_publisher,
-        #joint_state_publisher_node,
+        joint_state_publisher_node,
         move_group_node,
         #static_tf_1,
         #static_tf_2,

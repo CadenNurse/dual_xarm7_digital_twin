@@ -63,7 +63,7 @@ def generate_launch_description():
             'device_num': '2',
             'enable_depth': 'true',
             'enable_color': 'true',
-            'enable_ir' : 'true',
+            'enable_ir' : 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
 
@@ -80,7 +80,7 @@ def generate_launch_description():
             'device_num': '2',
             'enable_depth': 'true',
             'enable_color': 'true',
-            'enable_ir' : 'true',
+            'enable_ir' : 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
 
@@ -104,7 +104,7 @@ def generate_launch_description():
             'color_height': '2160',
             'color_format': 'MJPG',     
             'color_fps': '30',
-            'enable_ir' : 'true',
+            'enable_ir' : 'false',
             'ir_width': '640',
             'ir_height': '576',
             'ir_format': 'Y16',  

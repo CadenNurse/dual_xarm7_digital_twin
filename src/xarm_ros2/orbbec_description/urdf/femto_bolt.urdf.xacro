@@ -88,7 +88,7 @@
         </joint>
         <link name="${prefix}_depth_optical_frame"/>
 
-        <!-- IR Camera Frame -->
+        <!-- IR Camera Frame 
         <joint name="${prefix}_ir_joint" type="fixed">
           <origin xyz="0 ${depth_to_ir_offset} 0" rpy="0 0 0" />
           <parent link="${prefix}_depth_frame" />
@@ -101,7 +101,7 @@
           <parent link="${prefix}_ir_frame"/>
           <child link="${prefix}_ir_optical_frame"/>
         </joint>
-        <link name="${prefix}_ir_optical_frame"/>
+        <link name="${prefix}_ir_optical_frame"/> -->
 
         <!-- Color Camera Frame -->
         <joint name="${prefix}_color_joint" type="fixed">

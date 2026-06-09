@@ -92,6 +92,7 @@
       <axis xyz="0 0 0" />
     </joint>
 
+    <!--
     <link name="${prefix}camera_right_ir_frame">
       <inertial>
         <origin
@@ -116,26 +117,28 @@
         <material name="">
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
-      </visual>
-      <!-- <collision>
+      </visual> 
+       <collision>
         <origin
           xyz="0 0 0"
           rpy="0 0 0" />
         <geometry>
           <mesh filename="${mesh_path}camera_infra1_frame.STL" />
         </geometry>
-      </collision> -->
-    </link>
+      </collision>
+    </link> -->
 
-    <joint name="${prefix}camera_right_ir_joint" type="fixed">
+    <!-- IR Camera Frame 
+    <joint name="${prefix}camera_right_ir_joint" type="fixed"> 
       <origin
         xyz="0 -0.05000000074505806 0"
         rpy="0 0 0" />
       <parent link="${prefix}camera_depth_frame" />
       <child link="${prefix}camera_right_ir_frame" />
       <axis xyz="0 0 0" />
-    </joint>
+    </joint> 
 
+    
     <link name="${prefix}camera_right_ir_optical_frame">
       <inertial>
         <origin
@@ -160,7 +163,7 @@
         <material name="">
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
-      </visual>
+      </visual> -->
       <!-- <collision>
         <origin
           xyz="0 0 0"
@@ -168,8 +171,8 @@
         <geometry>
           <mesh filename="${mesh_path}camera_infra1_optical_frame.STL" />
         </geometry>
-      </collision> -->
-    </link>
+      </collision> 
+    </link> 
 
     <joint name="${prefix}camera_right_ir_optical_joint" type="fixed">
       <origin
@@ -178,7 +181,7 @@
       <parent link="${prefix}camera_right_ir_frame" />
       <child link="${prefix}camera_right_ir_optical_frame" />
       <axis xyz="0 0 0" />
-    </joint>
+    </joint> -->
 
     <link name="${prefix}camera_color_frame">
       <inertial>
@@ -268,6 +271,7 @@
       <axis xyz="0 0 0" />
     </joint>
 
+    <!-- LEFT IR camera
     <link name="${prefix}camera_left_ir_frame">
       <inertial>
         <origin
@@ -292,7 +296,7 @@
         <material name="">
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
-      </visual>
+      </visual> -->
       <!-- <collision>
         <origin
           xyz="0 0 0"
@@ -300,9 +304,10 @@
         <geometry>
           <mesh filename="${mesh_path}camera_infra2_frame.STL" />
         </geometry>
-      </collision> -->
-    </link>
-
+      </collision> 
+    </link> -->
+    
+    <!--
     <joint name="${prefix}camera_left_ir_joint" type="fixed">
       <origin
         xyz="0 0 0"
@@ -310,7 +315,7 @@
       <parent link="${prefix}camera_link" />
       <child link="${prefix}camera_left_ir_frame" />
       <axis xyz="0 0 0" />
-    </joint>
+    </joint> 
 
     <link name="${prefix}camera_left_ir_optical_frame">
       <inertial>
@@ -336,7 +341,7 @@
         <material name="">
           <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
         </material>
-      </visual>
+      </visual> -->
       <!-- <collision>
         <origin
           xyz="0 0 0"
@@ -344,8 +349,8 @@
         <geometry>
           <mesh filename="${mesh_path}camera_infra2_optical_frame.STL" />
         </geometry>
-      </collision> -->
-    </link>
+      </collision> 
+    </link> 
 
     <joint name="${prefix}camera_left_ir_optical_joint" type="fixed">
       <origin
@@ -354,7 +359,7 @@
       <parent link="${prefix}camera_left_ir_frame" />
       <child link="${prefix}camera_left_ir_optical_frame" />
       <axis xyz="0 0 0" />
-    </joint>
+    </joint> -->
 
     <link name="${prefix}camera_depth_frame">
       <inertial>

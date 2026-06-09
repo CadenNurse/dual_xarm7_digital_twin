@@ -4,7 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /MotionPlanning1
+        - /G_depthRegistered_PointCloud21
+        - /R_dpethRegistered_PointCloud21
       Splitter Ratio: 0.46875
     Tree Height: 459
   - Class: rviz_common/Selection
@@ -962,7 +965,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -980,9 +983,9 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /G_camera/depth_registered/points
-      Use Fixed Frame: true
+      Use Fixed Frame: false
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -1095,7 +1098,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.6850240230560303
+      Distance: 2.6823978424072266
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1110,10 +1113,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5953983664512634
+      Pitch: 0.7853981852531433
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.575398325920105
+      Yaw: 0.7853981852531433
     Saved: ~
 Window Geometry:
   Displays:
@@ -1141,5 +1144,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 2161
-  X: 1132
-  Y: 273
+  X: 84
+  Y: 117

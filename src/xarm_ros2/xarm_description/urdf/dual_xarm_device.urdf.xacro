@@ -121,7 +121,7 @@
   <xacro:gemini_2 prefix="$(arg prefix_2)" parent="$(arg prefix_2)link_eef"/>
 
    <xacro:femto_bolt prefix="G_camera" parent="world">
-    <origin xyz="0.526 0.290 0.905" rpy="0.0 -1.3090 0.0"/>
+    <origin xyz="0.526 0.290 0.905" rpy="0.0 1.3090 3.1416"/>
   </xacro:femto_bolt>
 
 </robot>

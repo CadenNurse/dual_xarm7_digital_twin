@@ -97,7 +97,7 @@
     model1300="$(arg model1300_1)" robot_sn="$(arg robot_sn_1)" mesh_suffix="$(arg mesh_suffix)" kinematics_suffix="$(arg kinematics_suffix_1)" gripper_version="$(arg gripper_version_1)" />
 
   <xacro:gemini_2 prefix="$(arg prefix_1)" parent="$(arg prefix_1)link_eef"/>
-
+  
   <xacro:xarm_device prefix="$(arg prefix_2)" hw_ns="$(arg hw_ns)" limited="$(arg limited)"
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
     add_gripper="$(arg add_gripper_2)" add_vacuum_gripper="$(arg add_vacuum_gripper_2)"
@@ -121,7 +121,7 @@
   <xacro:gemini_2 prefix="$(arg prefix_2)" parent="$(arg prefix_2)link_eef"/>
 
    <xacro:femto_bolt prefix="G" parent="world">
-    <origin xyz="0.526 0.290 0.905" rpy="0.0 -1.3090 1.5708"/>
+    <origin xyz="0.526 0.290 0.905" rpy="0.0 -1.3090 0.0"/>
   </xacro:femto_bolt>
 
 </robot>

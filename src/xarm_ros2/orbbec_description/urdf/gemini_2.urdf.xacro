@@ -4,7 +4,7 @@
      For more information, please see [http://wiki.ros.org/sw_urdf_exporter](http://wiki.ros.org/sw_urdf_exporter) -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="gemini_2">
   <xacro:macro name="gemini_2" params="prefix parent">
-    <xacro:property name="mesh_path" value="package://orbbec_description/meshes/gemini2/" />
+    <xacro:property name="mesh_path" value="file:///home/cadennurse/xarm_ws/src/xarm_ros2/orbbec_description/meshes/gemini2/" />
 
     <joint name="${prefix}camera_mount_joint" type="fixed">
       <origin xyz="0.06746 -0.0175 0.0237" rpy="3.1415926535897931 -1.5707963267948966 0" />

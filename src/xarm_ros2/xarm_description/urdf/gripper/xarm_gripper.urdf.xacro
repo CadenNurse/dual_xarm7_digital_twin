@@ -59,7 +59,7 @@
       <parent link="${prefix}xarm_gripper_base_link" />
       <child link="${prefix}left_outer_knuckle" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
     </joint>
     <link name="${prefix}left_finger">
       <inertial>
@@ -84,7 +84,7 @@
       <parent link="${prefix}left_outer_knuckle" />
       <child link="${prefix}left_finger" />
       <axis xyz="-1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
       <mimic joint="${prefix}drive_joint" multiplier="1" offset="0" />
     </joint>
     <link name="${prefix}left_inner_knuckle">
@@ -110,7 +110,7 @@
       <parent link="${prefix}xarm_gripper_base_link" />
       <child link="${prefix}left_inner_knuckle" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
       <mimic joint="${prefix}drive_joint" multiplier="1" offset="0" />
     </joint>
     <link name="${prefix}right_outer_knuckle">
@@ -136,7 +136,7 @@
       <parent link="${prefix}xarm_gripper_base_link" />
       <child link="${prefix}right_outer_knuckle" />
       <axis xyz="-1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
       <mimic joint="${prefix}drive_joint" multiplier="1" offset="0" />
     </joint>
     <link name="${prefix}right_finger">
@@ -162,7 +162,7 @@
       <parent link="${prefix}right_outer_knuckle" />
       <child link="${prefix}right_finger" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
       <mimic joint="${prefix}drive_joint" multiplier="1" offset="0" />
     </joint>
     <link name="${prefix}right_inner_knuckle">
@@ -188,7 +188,7 @@
       <parent link="${prefix}xarm_gripper_base_link" />
       <child link="${prefix}right_inner_knuckle" />
       <axis xyz="-1 0 0" />
-      <limit lower="0" upper="0.85" effort="50" velocity="2" />
+      <limit lower="0" upper="0.855" effort="50" velocity="2" />
       <mimic joint="${prefix}drive_joint" multiplier="1" offset="0" />
     </joint>
 

@@ -34,8 +34,8 @@ def generate_launch_description():
             'prefix_2': 'R_',
             'robot_ip_1': robot1_ip,
             'robot_ip_2': robot2_ip,
-            'add_gripper_1': 'true',
-            'add_gripper_2': 'true',
+            'add_gripper_1': 'false',
+            'add_gripper_2': 'false',
             'add_vacuum_gripper_1': 'false',
             'add_vacuum_gripper_2': 'false',
             'add_bio_gripper_1': 'false',
@@ -115,9 +115,16 @@ def generate_launch_description():
         }.items(),
     )
 
+    wall_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(xarm_moveit_config_dir, 'launch', 'wall.launch.py')
+        )
+    )
+
     return LaunchDescription([
         dual_xarm,
         TimerAction(period=2.0, actions=[right_camera]),
+        TimerAction(period=3.0, actions=[wall_node]),
         TimerAction(period=4.0, actions=[left_camera]),
         TimerAction(period=6.0, actions=[global_camera]),
     ])

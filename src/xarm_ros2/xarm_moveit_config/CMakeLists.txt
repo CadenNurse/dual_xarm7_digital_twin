@@ -39,5 +39,9 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+install(PROGRAMS
+  config/scripts/add_wall.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()

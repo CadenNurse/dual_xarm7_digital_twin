@@ -13,13 +13,13 @@ class SceneObjectAdder(Node):
         # Back wall
         self.declare_parameter('frame_id', 'world')
         self.declare_parameter('wall_id', 'back_wall')
-        self.declare_parameter('wall_size', [0.01, 1.3, 1.0])
-        self.declare_parameter('wall_position', [-0.28, 0.29, 0.5])
+        self.declare_parameter('wall_size', [0.01, 1.2, 0.9])
+        self.declare_parameter('wall_position', [-0.28, 0.29, 0.45])
 
         # Ground / floor
         self.declare_parameter('ground_id', 'ground_plane')
-        self.declare_parameter('ground_size', [1.5, 1.5, 0.02])
-        self.declare_parameter('ground_position', [0.0, 0.0, -0.01])
+        self.declare_parameter('ground_size', [0.91, 1.2, 0.01])
+        self.declare_parameter('ground_position', [0.17, 0.29, -0.01])
 
         self.pub = self.create_publisher(CollisionObject, 'collision_object', 10)
         self.timer = self.create_timer(3.0, self.add_objects_once)

@@ -41,6 +41,7 @@ install(DIRECTORY
 )
 install(PROGRAMS
   config/scripts/add_wall.py
+  config/scripts/add_posts.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

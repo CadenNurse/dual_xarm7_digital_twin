@@ -8,5 +8,11 @@ def generate_launch_description():
             executable='add_wall.py',
             name='add_wall',
             output='screen'
+        ),
+        Node(
+            package='xarm_moveit_config',
+            executable='add_posts.py',
+            name='add_posts',
+            output='screen'
         )
     ])

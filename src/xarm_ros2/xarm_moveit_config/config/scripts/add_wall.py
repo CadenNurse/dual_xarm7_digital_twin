@@ -1,27 +1,33 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from moveit_msgs.msg import CollisionObject
+
+from moveit_msgs.msg import CollisionObject, PlanningScene, ObjectColor
 from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import Pose
+from std_msgs.msg import ColorRGBA
 
 
 class SceneObjectAdder(Node):
     def __init__(self):
         super().__init__('scene_object_adder')
 
-        # Back wall
         self.declare_parameter('frame_id', 'world')
+
+        # Wall
         self.declare_parameter('wall_id', 'back_wall')
         self.declare_parameter('wall_size', [0.01, 1.2, 0.9])
         self.declare_parameter('wall_position', [-0.28, 0.29, 0.45])
 
-        # Ground / floor
+        # Ground
         self.declare_parameter('ground_id', 'ground_plane')
         self.declare_parameter('ground_size', [0.91, 1.2, 0.01])
         self.declare_parameter('ground_position', [0.17, 0.29, -0.01])
 
-        self.pub = self.create_publisher(CollisionObject, 'collision_object', 10)
+        # Shared color
+        self.declare_parameter('color_rgba', [0.5, 0.5, 0.5, 0.8])
+
+        self.pub = self.create_publisher(PlanningScene, '/planning_scene', 10)
         self.timer = self.create_timer(3.0, self.add_objects_once)
         self.done = False
 
@@ -45,31 +51,51 @@ class SceneObjectAdder(Node):
         obj.operation = CollisionObject.ADD
         return obj
 
+    def make_color(self, object_id, rgba):
+        c = ObjectColor()
+        c.id = object_id
+        c.color = ColorRGBA(
+            r=float(rgba[0]),
+            g=float(rgba[1]),
+            b=float(rgba[2]),
+            a=float(rgba[3]),
+        )
+        return c
+
     def add_objects_once(self):
         if self.done:
             return
 
         frame_id = self.get_parameter('frame_id').value
+        color_rgba = self.get_parameter('color_rgba').value
 
         wall = self.make_box(
-            frame_id=frame_id,
-            object_id=self.get_parameter('wall_id').value,
-            size=self.get_parameter('wall_size').value,
-            position=self.get_parameter('wall_position').value,
+            frame_id,
+            self.get_parameter('wall_id').value,
+            self.get_parameter('wall_size').value,
+            self.get_parameter('wall_position').value,
         )
 
         ground = self.make_box(
-            frame_id=frame_id,
-            object_id=self.get_parameter('ground_id').value,
-            size=self.get_parameter('ground_size').value,
-            position=self.get_parameter('ground_position').value,
+            frame_id,
+            self.get_parameter('ground_id').value,
+            self.get_parameter('ground_size').value,
+            self.get_parameter('ground_position').value,
         )
 
-        self.pub.publish(wall)
-        self.pub.publish(ground)
+        wall_color = self.make_color(wall.id, color_rgba)
+        ground_color = self.make_color(ground.id, color_rgba)
+
+        scene = PlanningScene()
+        scene.is_diff = True
+        scene.world.collision_objects = [wall, ground]
+        scene.object_colors = [wall_color, ground_color]
+
+        self.pub.publish(scene)
 
         self.get_logger().info(
-            f'Published collision objects: "{wall.id}" and "{ground.id}" in frame "{frame_id}"'
+            f'Published wall "{wall.id}" and ground "{ground.id}" '
+            f'with rgba={color_rgba} in frame "{frame_id}"'
         )
 
         self.done = True

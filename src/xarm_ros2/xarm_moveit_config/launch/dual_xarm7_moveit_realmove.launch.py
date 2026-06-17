@@ -54,15 +54,23 @@ def generate_launch_description():
         ),
         launch_arguments={
             'serial_number': 'AY3794301A0',
+            'usb_port': '4-4.2',
             'camera_name': 'R_camera',
-            'device_num': '1',
+            'device_num': '3',
             'enable_depth': 'true',
             'enable_color': 'true',
-            'enable_ir': 'true',
+            'enable_ir': 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
             'publish_tf': 'false',
+                # QoS for all streams
+            'color_qos':            'SENSOR_DATA',
+            'depth_qos':            'SENSOR_DATA',
+            'ir_qos':               'SENSOR_DATA',
+            'point_cloud_qos':      'SENSOR_DATA',
+            'color_camera_info_qos': 'SENSOR_DATA',
+            'depth_camera_info_qos': 'SENSOR_DATA',
         }.items(),
     )
 
@@ -71,16 +79,24 @@ def generate_launch_description():
             os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
         ),
         launch_arguments={
-            'serial_number': 'AY3794301C4',
+            #'serial_number': 'AY3794301C4',
+            'usb_port': '4-4.3',
             'camera_name': 'L_camera',
-            'device_num': '2',
+            'device_num': '3',
             'enable_depth': 'true',
             'enable_color': 'true',
-            'enable_ir': 'true',
+            'enable_ir': 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
             'publish_tf': 'false',
+                # QoS for all streams
+            'color_qos':            'SENSOR_DATA',
+            'depth_qos':            'SENSOR_DATA',
+            'ir_qos':               'SENSOR_DATA',
+            'point_cloud_qos':      'SENSOR_DATA',
+            'color_camera_info_qos': 'SENSOR_DATA',
+            'depth_camera_info_qos': 'SENSOR_DATA',
         }.items(),
     )
 
@@ -89,7 +105,8 @@ def generate_launch_description():
             os.path.join(orbbec_camera_dir, 'launch', 'femto_bolt.launch.py')
         ),
         launch_arguments={
-            'serial_number': 'CL8855301G8',
+            #'serial_number': 'CL8855301G8',
+            'usb_port': '2-1',
             'camera_name': 'G_camera',
             'device_num': '3',
             'enable_depth': 'true',
@@ -101,17 +118,20 @@ def generate_launch_description():
             'color_width': '1280',
             'color_height': '720',
             'color_format': 'MJPG',
-            'color_fps': '30',
-            'enable_ir': 'true',
-            'ir_width': '640',
-            'ir_height': '576',
-            'ir_format': 'Y16',
-            'ir_fps': '30',
+            'color_fps': '15',
+            'enable_ir': 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
             'publish_tf': 'false',
             'enable_frame_sync': 'true',
+                # QoS for all streams
+            'color_qos':            'SENSOR_DATA',
+            'depth_qos':            'SENSOR_DATA',
+            'ir_qos':               'SENSOR_DATA',
+            'point_cloud_qos':      'SENSOR_DATA',
+            'color_camera_info_qos': 'SENSOR_DATA',
+            'depth_camera_info_qos': 'SENSOR_DATA',
         }.items(),
     )
 

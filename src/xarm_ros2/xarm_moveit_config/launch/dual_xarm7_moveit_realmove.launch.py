@@ -15,6 +15,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     xarm_moveit_config_dir = get_package_share_directory('xarm_moveit_config')
     orbbec_camera_dir = get_package_share_directory('orbbec_camera')
+    apriltag_ros_dir = get_package_share_directory('apriltag_ros')
 
     robot1_ip = '192.168.1.211'
     robot2_ip = '192.168.1.221'
@@ -144,10 +145,25 @@ def generate_launch_description():
         )
     )
 
+    apriltag_node = Node(
+        package='apriltag_ros',
+        executable='tag_detector',
+        name='apriltag',
+        output='screen',
+        remappings=[
+            ('image', '/G_camera/color/image_raw'),
+            ('camera_info', '/G_camera/color/camera_info'),
+        ],
+        parameters=[
+            os.path.join(apriltag_ros_dir, 'cfg', 'femto_tags.yaml')
+        ],
+    )
+
     return LaunchDescription([
         dual_xarm,
         TimerAction(period=2.0, actions=[right_camera]),
         TimerAction(period=3.0, actions=[wall_node]),
         TimerAction(period=4.0, actions=[left_camera]),
         TimerAction(period=6.0, actions=[global_camera]),
+        TimerAction(period=8.0, actions=[apriltag_node]),
     ])

@@ -22,7 +22,7 @@ def generate_launch_description():
                 xarm_moveit_config_dir,
                 'launch',
                 'demo',
-                'demo_dual_realmove.launch.py'
+                'demo_dual_realmove_new.launch.py'
             )
         ),
         launch_arguments={

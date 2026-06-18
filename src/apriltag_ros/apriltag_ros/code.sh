@@ -2,3 +2,6 @@
 #   -r image:=/G_camera/color/image_raw \
 #   -r camera_info:=/G_camera/color/camera_info \
 #   --params-file /home/cadennurse/xarm_ws/src/apriltag_ros/apriltag_ros/cfg/femto_tags.yaml
+# OR isaac Sim 
+# -r image:=/sim/G_camera/color/image_raw
+# -r camera_info:=/sim/G_camera/color/camera_info

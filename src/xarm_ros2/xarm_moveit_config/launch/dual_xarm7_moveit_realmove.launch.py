@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# if you change any of these parameters, make sure you delete the display in .rviz file and 
+# reintroduce it in rviz
+
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -53,7 +56,7 @@ def generate_launch_description():
             os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
         ),
         launch_arguments={
-            'serial_number': 'AY3794301A0',
+            #'serial_number': 'AY3794301A0',
             'usb_port': '4-4.2',
             'camera_name': 'R_camera',
             'device_num': '3',
@@ -113,10 +116,10 @@ def generate_launch_description():
             'depth_width': '640',
             'depth_height': '576',
             'depth_format': 'Y16',
-            'depth_fps': '30',
+            'depth_fps': '15',
             'enable_color': 'true',
-            'color_width': '3840',
-            'color_height': '2160',
+            'color_width': '1920',
+            'color_height': '1080',
             'color_format': 'MJPG',
             'color_fps': '15',
             'enable_ir': 'false',

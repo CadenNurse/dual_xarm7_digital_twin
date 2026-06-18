@@ -66,11 +66,12 @@ AprilTagNode::AprilTagNode(rclcpp::NodeOptions options)
   max_hamming(declare_parameter<int>("max_hamming", 0)),
   z_up(declare_parameter<bool>("z_up", true)),
 
-  // topics
+  // topics & updated to include QoS of camera (BEST EFFORT)
   sub_cam(image_transport::create_camera_subscription(
-      this, "image",
-      std::bind(&AprilTagNode::onCamera, this, std::placeholders::_1, std::placeholders::_2),
-      declare_parameter<std::string>("image_transport", "raw"), rmw_qos_profile_default)),
+    this, "image",
+    std::bind(&AprilTagNode::onCamera, this, std::placeholders::_1, std::placeholders::_2),
+    declare_parameter<std::string>("image_transport", "raw"),
+    rmw_qos_profile_sensor_data)),
   pub_detections(create_publisher<apriltag_msgs::msg::AprilTagDetectionArray>(
       "apriltag_detections", rclcpp::QoS(10)))
 {

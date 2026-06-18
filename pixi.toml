@@ -79,6 +79,7 @@ ros-jazzy-statistics-msgs = ">=2.0.3,<3"
 ros-jazzy-backward-ros = ">=1.0.8,<2"
 ros-jazzy-orbbec-camera = ">=1.5.13,<2"
 ros-jazzy-orbbec-description = ">=1.5.13,<2"
+#ros-jazzy-apriltag-ros = "*"
 
 #Process
 #cadennurse@UFactory-PC: cd ~/xarm_ws

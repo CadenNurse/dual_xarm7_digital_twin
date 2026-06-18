@@ -12,7 +12,6 @@ apriltag:
       sharpening: 0.25
       debug: false
     pose_estimation_method: "pnp"
-    tag:
-      ids:    [2, 3, 5, 4]
-      frames: ["tag_0", "tag_1", "tag_2", "tag_3"]
-      sizes:  [0.027, 0.027, 0.027, 0.027]
+    tag_ids:    [2, 3, 4, 5]
+    tag_frames: ["tag_2", "tag_3", "tag_4", "tag_5"]
+    tag_sizes:  [0.027, 0.027, 0.027, 0.027]

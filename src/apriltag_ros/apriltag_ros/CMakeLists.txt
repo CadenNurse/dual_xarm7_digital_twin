@@ -4,6 +4,7 @@ project(apriltag_ros)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -19,7 +20,7 @@ find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
 find_package(apriltag REQUIRED)
 
-include_directories(include ${EIGEN3_INCLUDE_DIR})
+include_directories(include)
 
 add_executable(tag_detector src/AprilTagNode.cpp)
 
@@ -36,15 +37,21 @@ set(DEPENDENCIES
     "cv_bridge"
     "geometry_msgs"
     "apriltag_msgs"
-    "Eigen3"
     "apriltag"
 )
 
 ament_target_dependencies(AprilTagNode ${DEPENDENCIES})
 ament_target_dependencies(tag_detector ${DEPENDENCIES})
 
-target_link_libraries(AprilTagNode apriltag::apriltag)
-target_link_libraries(tag_detector apriltag::apriltag)
+target_link_libraries(AprilTagNode 
+    apriltag::apriltag
+    Eigen3::Eigen
+)
+
+target_link_libraries(tag_detector 
+    apriltag::apriltag
+    Eigen3::Eigen
+)
 
 rclcpp_components_register_nodes(AprilTagNode "AprilTagNode")
 

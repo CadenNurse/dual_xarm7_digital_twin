@@ -7,7 +7,7 @@
     <xacro:property name="mesh_path" value="file:///home/cadennurse/xarm_ws/src/xarm_ros2/orbbec_description/meshes/gemini2/" />
 
     <joint name="${prefix}camera_mount_joint" type="fixed">
-      <origin xyz="0.06746 -0.0175 0.0237" rpy="3.1415926535897931 -1.5707963267948966 0" />
+      <origin xyz="0.06746 -0.0245 0.0237" rpy="3.1415926535897931 -1.5707963267948966 0" />
       <parent link="${parent}" />
       <child link="${prefix}camera_link" />
       <axis xyz="0 0 0" />

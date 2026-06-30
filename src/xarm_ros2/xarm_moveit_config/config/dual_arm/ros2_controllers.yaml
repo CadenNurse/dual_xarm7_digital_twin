@@ -10,11 +10,11 @@ controller_manager:
     R_xarm7_traj_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    L_xarm_gripper_traj_controller:
-      type: joint_trajectory_controller/GripperActionController
+    L_xarm_gripper:
+      type: position_controllers/GripperActionController
 
-    R_xarm_gripper_traj_controller:
-      type: joint_trajectory_controller/GripperActionController
+    R_xarm_gripper:
+      type: position_controllers/GripperActionController
 
 L_xarm7_traj_controller:
   ros__parameters:
@@ -74,26 +74,22 @@ R_xarm7_traj_controller:
     action_monitor_rate: 10.0
     interface_name: position
 
-L_xarm_gripper_traj_controller:
+L_xarm_gripper:
   ros__parameters:
-    command_interfaces:
-      - position
-    state_interfaces:
-      - position
-      - velocity
-    joints:
-      - L_drive_joint
     action_ns: gripper_action
-    default: true
+    # command_interfaces:
+    #   - position
+    # state_interfaces:
+    #   - position
+    #   - velocity
+    joint: L_drive_joint
 
-R_xarm_gripper_traj_controller:
+R_xarm_gripper:
   ros__parameters:
-    command_interfaces:
-      - position
-    state_interfaces:
-      - position
-      - velocity
-    joints:
-      - R_drive_joint
-    action_ns: gripper_action
-    default: true
+   action_ns: gripper_action
+    # command_interfaces:
+    #   - position
+    # state_interfaces:
+    #   - position
+    #   - velocity
+   joint: R_drive_joint

@@ -57,14 +57,6 @@ namespace xarm_api
         void _xarm_gripper_action_execute(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle);
         void _pub_xarm_gripper_joint_states(int pos);
 
-        void _init_bio_gripper(void);
-        inline float _bio_gripper_pos_convert(float pos, bool reversed = false);
-        rclcpp_action::GoalResponse _handle_bio_gripper_action_goal(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const control_msgs::action::GripperCommand::Goal> goal);
-        rclcpp_action::CancelResponse _handle_bio_gripper_action_cancel(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle);
-        void _handle_bio_gripper_action_accepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle);
-        void _bio_gripper_action_execute(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle);
-        void _pub_bio_gripper_joint_states(int pos);
-
         template<typename ServiceT, typename CallbackT>
     	typename rclcpp::Service<ServiceT>::SharedPtr _create_service(const std::string & service_name, CallbackT && callback);
 
@@ -90,7 +82,6 @@ namespace xarm_api
         int joint_state_rate_;
         int joint_state_flags_;
         bool in_ros_control_;
-        int vacuum_gripper_hardware_version_;
         std::string report_type_;
         std::vector<std::string> joint_names_;
         sensor_msgs::msg::JointState joint_state_msg_;
@@ -114,18 +105,6 @@ namespace xarm_api
         control_msgs::action::GripperCommand::Feedback::SharedPtr xarm_gripper_feedback_;
         control_msgs::action::GripperCommand::Result::SharedPtr xarm_gripper_result_;
         rclcpp_action::Server<control_msgs::action::GripperCommand>::SharedPtr xarm_gripper_action_server_;
-
-        bool bio_gripper_init_loop_;
-        int bio_gripper_speed_;
-        int bio_gripper_max_pos_;
-        int bio_gripper_min_pos_;
-        int bio_gripper_frequency_;
-        int bio_gripper_threshold_;
-        int bio_gripper_threshold_times_;
-        sensor_msgs::msg::JointState bio_gripper_joint_state_msg_;
-        control_msgs::action::GripperCommand::Feedback::SharedPtr bio_gripper_feedback_;
-        control_msgs::action::GripperCommand::Result::SharedPtr bio_gripper_result_;
-        rclcpp_action::Server<control_msgs::action::GripperCommand>::SharedPtr bio_gripper_action_server_;
     
     private:
         bool service_debug_;
@@ -138,7 +117,6 @@ namespace xarm_api
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_set_counter_reset_;
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_set_counter_increase_;
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_clean_gripper_error_;
-        rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_clean_bio_gripper_error_;
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_start_record_trajectory_;
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_stop_record_trajectory_;
         rclcpp::Service<xarm_msgs::srv::Call>::SharedPtr service_set_ft_sensor_zero_;
@@ -159,7 +137,6 @@ namespace xarm_api
         bool _set_counter_reset(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
         bool _set_counter_increase(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
         bool _clean_gripper_error(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res); 
-        bool _clean_bio_gripper_error(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
         bool _start_record_trajectory(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
         bool _stop_record_trajectory(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
         bool _set_ft_sensor_zero(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res);
@@ -172,10 +149,7 @@ namespace xarm_api
         // GetInt16
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_state_;
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_cmdnum_;
-        rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_vacuum_gripper_;
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_gripper_err_code_;
-        rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_bio_gripper_status_;
-        rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_bio_gripper_error_;
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_reduced_mode_;
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_report_tau_or_i_;
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_ft_sensor_mode_;
@@ -197,10 +171,7 @@ namespace xarm_api
         rclcpp::Service<xarm_msgs::srv::GetInt16>::SharedPtr service_get_linear_track_sci_;
         bool _get_state(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
         bool _get_cmdnum(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
-        bool _get_vacuum_gripper(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
         bool _get_gripper_err_code(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
-        bool _get_bio_gripper_status(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
-        bool _get_bio_gripper_error(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
         bool _get_reduced_mode(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
         bool _get_report_tau_or_i(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
         bool _get_ft_sensor_mode(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res);
@@ -228,7 +199,6 @@ namespace xarm_api
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_teach_sensitivity_;
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_gripper_mode_;
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_gripper_enable_;
-        rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_bio_gripper_speed_;
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_collision_rebound_;
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_fence_mode_;
         rclcpp::Service<xarm_msgs::srv::SetInt16>::SharedPtr service_set_reduced_mode_;
@@ -257,7 +227,6 @@ namespace xarm_api
         bool _set_teach_sensitivity(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
         bool _set_gripper_mode(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
         bool _set_gripper_enable(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
-        bool _set_bio_gripper_speed(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
         bool _set_collision_rebound(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
         bool _set_fence_mode(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
         bool _set_reduced_mode(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res);
@@ -417,44 +386,10 @@ namespace xarm_api
         bool _set_cgpio_analog(const std::shared_ptr<xarm_msgs::srv::SetAnalogIO::Request> req, std::shared_ptr<xarm_msgs::srv::SetAnalogIO::Response> res);
         bool _set_cgpio_analog_with_xyz(const std::shared_ptr<xarm_msgs::srv::SetAnalogIO::Request> req, std::shared_ptr<xarm_msgs::srv::SetAnalogIO::Response> res);
 
-        // VacuumGripperCtrl
-        rclcpp::Service<xarm_msgs::srv::VacuumGripperCtrl>::SharedPtr service_set_vacuum_gripper_;
-        bool _set_vacuum_gripper(const std::shared_ptr<xarm_msgs::srv::VacuumGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::VacuumGripperCtrl::Response> res);
-
         // GripperMove
         rclcpp::Service<xarm_msgs::srv::GripperMove>::SharedPtr service_set_gripper_position_;
         bool _set_gripper_position(const std::shared_ptr<xarm_msgs::srv::GripperMove::Request> req, std::shared_ptr<xarm_msgs::srv::GripperMove::Response> res);
         
-        // BioGripperEnable
-        rclcpp::Service<xarm_msgs::srv::BioGripperEnable>::SharedPtr service_set_bio_gripper_enable_;
-        bool _set_bio_gripper_enable(const std::shared_ptr<xarm_msgs::srv::BioGripperEnable::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperEnable::Response> res);
-        
-        // BioGripperCtrl
-        rclcpp::Service<xarm_msgs::srv::BioGripperCtrl>::SharedPtr service_open_bio_gripper_;
-        rclcpp::Service<xarm_msgs::srv::BioGripperCtrl>::SharedPtr service_close_bio_gripper_;
-        bool _open_bio_gripper(const std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Response> res);
-        bool _close_bio_gripper(const std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Response> res);         
-        
-        // RobotiqReset
-        rclcpp::Service<xarm_msgs::srv::RobotiqReset>::SharedPtr service_robotiq_reset_;
-        bool _robotiq_reset(const std::shared_ptr<xarm_msgs::srv::RobotiqReset::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqReset::Response> res);
-        
-        // RobotiqActivate
-        rclcpp::Service<xarm_msgs::srv::RobotiqActivate>::SharedPtr service_robotiq_set_activate_;
-        bool _robotiq_set_activate(const std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Response> res);
-        
-        // RobotiqMove
-        rclcpp::Service<xarm_msgs::srv::RobotiqMove>::SharedPtr service_robotiq_set_position_;
-        rclcpp::Service<xarm_msgs::srv::RobotiqMove>::SharedPtr service_robotiq_open_;
-        rclcpp::Service<xarm_msgs::srv::RobotiqMove>::SharedPtr service_robotiq_close_;
-        bool _robotiq_set_position(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res);
-        bool _robotiq_open(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res);
-        bool _robotiq_close(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res);
-        
-        // RobotiqGetStatus
-        rclcpp::Service<xarm_msgs::srv::RobotiqGetStatus>::SharedPtr service_robotiq_get_status_;
-        bool _robotiq_get_status(const std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Response> res);
-
         // SetModbusTimeout
         rclcpp::Service<xarm_msgs::srv::SetModbusTimeout>::SharedPtr service_set_tgpio_modbus_timeout_;
         bool _set_tgpio_modbus_timeout(const std::shared_ptr<xarm_msgs::srv::SetModbusTimeout::Request> req, std::shared_ptr<xarm_msgs::srv::SetModbusTimeout::Response> res);

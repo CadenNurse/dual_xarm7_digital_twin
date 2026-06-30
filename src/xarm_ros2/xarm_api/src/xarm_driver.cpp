@@ -148,7 +148,6 @@ namespace xarm_api
         curr_cmdnum = 0;
         arm = NULL;
         in_ros_control_ = in_ros_control;
-        vacuum_gripper_hardware_version_ = 0;
 
         node_ = node;
         std::string prefix = "";
@@ -281,15 +280,11 @@ namespace xarm_api
         _init_service();
         _init_subscription();
         _init_xarm_gripper();
-        _init_bio_gripper();
 
         bool add_gripper;
         node_->get_parameter_or("add_gripper", add_gripper, false);
 
-        bool add_bio_gripper;
-        node_->get_parameter_or("add_bio_gripper", add_bio_gripper, false);
-
-        if (_firmware_version_is_ge(2, 7, 101) && (add_gripper || add_bio_gripper)) {
+        if (_firmware_version_is_ge(2, 7, 101) && (add_gripper)) {
             sock_rt_ = new SocketPort((char *)server_ip.data(), 30000, 10, 1024, 1);
             std::thread([this]() {
                 int ret;
@@ -363,11 +358,6 @@ namespace xarm_api
                         gripper_pulse = (int)((asin((external_device_info[0] - 16) / 110.0) * 57.29577951308232 + 8.33) * 18.28);
                         _pub_xarm_gripper_joint_states(gripper_pulse);
                     }
-                    else if (dev_type == 3) {
-                        // 注: 这里是mm
-                        _pub_bio_gripper_joint_states(external_device_info[0]);
-                    }
-
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             }).detach();
@@ -669,216 +659,7 @@ namespace xarm_api
     }
 
 
-    void XArmDriver::_init_bio_gripper(void)
-    {
-        node_->get_parameter_or("bio_gripper.speed", bio_gripper_speed_, 2000);  // BIO机械爪速度
-        node_->get_parameter_or("bio_gripper.max_pos", bio_gripper_max_pos_, 150); // BIO机械爪最大值，用来转换
-        node_->get_parameter_or("bio_gripper.min_pos", bio_gripper_min_pos_, 71); // BIO机械爪最小值，用来转换
-        node_->get_parameter_or("bio_gripper.frequency", bio_gripper_frequency_, 10); // 发送BIO机械爪位置后查询机械爪位置的频率
-        node_->get_parameter_or("bio_gripper.threshold", bio_gripper_threshold_, 3); // 检测BIO机械爪当前位置和上一次位置的差值如果小于当前值，则认为机械爪没动
-        node_->get_parameter_or("bio_gripper.threshold_times", bio_gripper_threshold_times_, 10); // 如果检测到BIO机械爪没动的次数超过此值且当前位置和目标位置差值不超过15，则认为机械爪运动成功
-        RCLCPP_INFO(node_->get_logger(), "bio_gripper_speed: %d, bio_gripper_max_pos: %d, bio_gripper_min_pos: %d, bio_gripper_frequency : %d, bio_gripper_threshold: %d, bio_gripper_threshold_times: %d", 
-            bio_gripper_speed_, bio_gripper_max_pos_, bio_gripper_min_pos_, bio_gripper_frequency_, bio_gripper_threshold_, bio_gripper_threshold_times_);
-
-        bio_gripper_feedback_ = std::make_shared<control_msgs::action::GripperCommand::Feedback>();
-        bio_gripper_result_ = std::make_shared<control_msgs::action::GripperCommand::Result>();;
-        bio_gripper_joint_state_msg_.header.stamp = node_->get_clock()->now();
-        bio_gripper_joint_state_msg_.header.frame_id = "bio-gripper-joint-state data";        
-        bio_gripper_joint_state_msg_.name.resize(2);
-        bio_gripper_joint_state_msg_.position.resize(2, std::numeric_limits<double>::quiet_NaN());
-        bio_gripper_joint_state_msg_.velocity.resize(2, std::numeric_limits<double>::quiet_NaN());
-        bio_gripper_joint_state_msg_.effort.resize(2, std::numeric_limits<double>::quiet_NaN());
-        node_->get_parameter_or("bio_gripper.joint_names", bio_gripper_joint_state_msg_.name, 
-            std::vector<std::string>({"left_finger_joint", "right_finger_joint"}));
-        
-        std::string prefix = "";
-        node_->get_parameter_or("prefix", prefix, std::string(""));
-        if (prefix != "") {
-            for (int i = 0; i < bio_gripper_joint_state_msg_.name.size(); i++) {
-                bio_gripper_joint_state_msg_.name[i] = prefix + bio_gripper_joint_state_msg_.name[i];
-            }
-        }
-
-        bio_gripper_action_server_ = rclcpp_action::create_server<control_msgs::action::GripperCommand>(
-            node_, prefix + "bio_gripper/gripper_action",
-            BIND_CLS_CB(&XArmDriver::_handle_bio_gripper_action_goal),
-            BIND_CLS_CB_1(&XArmDriver::_handle_bio_gripper_action_cancel),
-            BIND_CLS_CB_1(&XArmDriver::_handle_bio_gripper_action_accepted));
-        
-        bool add_bio_gripper;
-        node_->get_parameter_or("add_bio_gripper", add_bio_gripper, false);
-        if (add_bio_gripper) {
-            bio_gripper_init_loop_ = false;
-            std::thread([this]() {
-                int curr_pos;
-                int ret = arm->get_bio_gripper_position(&curr_pos);
-                while (ret == 0 && !bio_gripper_init_loop_)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                    _pub_bio_gripper_joint_states(curr_pos);
-                }
-            }).detach();
-        }
-    }
-
-    inline float XArmDriver::_bio_gripper_pos_convert(float pos, bool reversed)
-    {
-        if (reversed) {
-            return fabs(pos * 1000 * 2 + 71);
-        }
-        else {
-            return -fabs(pos - 71) / 1000 / 2;
-        }
-    }
-
-    void XArmDriver::_pub_bio_gripper_joint_states(int pos)
-    {
-        bio_gripper_joint_state_msg_.header.stamp = node_->get_clock()->now();
-        float p = _bio_gripper_pos_convert(pos);
-        bio_gripper_joint_state_msg_.position[0] = p;
-        bio_gripper_joint_state_msg_.position[1] = -p;
-        pub_joint_state(bio_gripper_joint_state_msg_);
-    }
-
-    rclcpp_action::GoalResponse XArmDriver::_handle_bio_gripper_action_goal(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const control_msgs::action::GripperCommand::Goal> goal)
-    {
-        // RCLCPP_INFO(node_->get_logger(), "Received gripper move goal request, target_pulse=%f, pulse_speed=%f", goal->target_pulse, goal->pulse_speed);
-        RCLCPP_INFO(node_->get_logger(), "Received bio gripper move goal request, position=%f, max_effort=%f", goal->command.position, goal->command.max_effort);
-        (void)uuid;
-        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-    }
-
-    rclcpp_action::CancelResponse XArmDriver::_handle_bio_gripper_action_cancel(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle)
-    {
-        RCLCPP_INFO(node_->get_logger(), "Received request to cancel bio gripper move goal");
-        (void)goal_handle;
-        return rclcpp_action::CancelResponse::ACCEPT;
-    }
-
-    void XArmDriver::_handle_bio_gripper_action_accepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle)
-    {
-        // this needs to return quickly to avoid blocking the executor, so spin up a new thread
-        std::thread{BIND_CLS_CB_1(&XArmDriver::_bio_gripper_action_execute), goal_handle}.detach();
-    }
-
-    void XArmDriver::_bio_gripper_action_execute(const std::shared_ptr<rclcpp_action::ServerGoalHandle<control_msgs::action::GripperCommand>> goal_handle)
-    {
-        bio_gripper_init_loop_ = true;
-        const auto goal = goal_handle->get_goal();
-        RCLCPP_INFO(node_->get_logger(), "bio_gripper_action_execute, position=%f, max_effort=%f", goal->command.position, goal->command.max_effort);
-        
-        int ret;
-        int curr_pos = 0;
-        int err = 0;
-        ret = arm->get_bio_gripper_error(&err);
-        if (ret != 0 || err != 0) {
-            arm->clean_bio_gripper_error();
-            ret = arm->get_bio_gripper_error(&err);
-        }
-        if (ret != 0 || err != 0) {
-            try {
-                goal_handle->canceled(bio_gripper_result_);
-            } catch (std::exception &e) {
-                RCLCPP_ERROR(node_->get_logger(), "bio goal_handle canceled exception, ex=%s", e.what());    
-            }
-            RCLCPP_ERROR(node_->get_logger(), "get_bio_gripper_error, ret=%d, err=%d", ret, err);
-            return;
-        }
-        ret = arm->get_bio_gripper_position(&curr_pos);
-        _pub_bio_gripper_joint_states(curr_pos);
-
-        // ret = arm->set_bio_gripper_enable(true);
-        // if (ret != 0) {
-        //     bio_gripper_result_->position = _bio_gripper_pos_convert(curr_pos);
-        //     try {
-        //         goal_handle->canceled(bio_gripper_result_);
-        //     } catch (std::exception &e) {
-        //         RCLCPP_ERROR(node_->get_logger(), "bio goal_handle canceled exception, ex=%s", e.what()); 
-        //     }
-        //     ret = arm->get_bio_gripper_error(&err);
-        //     RCLCPP_WARN(node_->get_logger(), "set_bio_gripper_enable, ret=%d, err=%d, curr_pos=%d", ret, err, curr_pos);
-        //     return;
-        // }
-        // ret = arm->set_bio_gripper_speed(bio_gripper_speed_);
-        // if (ret != 0) {
-        //     bio_gripper_result_->position = _bio_gripper_pos_convert(curr_pos);
-        //     try {
-        //         goal_handle->canceled(bio_gripper_result_);
-        //     } catch (std::exception &e) {
-        //         RCLCPP_ERROR(node_->get_logger(), "bio goal_handle canceled exception, ex=%s", e.what()); 
-        //     }
-        //     ret = arm->get_bio_gripper_error(&err);
-        //     RCLCPP_WARN(node_->get_logger(), "set_bio_gripper_speed, ret=%d, err=%d, curr_pos=%d", ret, err, curr_pos);
-        //     return;
-        // }
-        int last_pos = -bio_gripper_max_pos_;
-        float target_pos = _bio_gripper_pos_convert(goal->command.position, true);
-        bool is_move = true;
-        std::thread([this, &target_pos, &is_move, &curr_pos]() {
-            is_move = true;
-            int ret2;
-            if (target_pos >= 100)
-                ret2 = arm->open_bio_gripper(bio_gripper_speed_, true, 5, false); // set wait_motion=false
-            else
-                ret2 = arm->close_bio_gripper(bio_gripper_speed_, true, 5, false); // set wait_motion=false
-            int err;
-            arm->get_bio_gripper_error(&err);
-            RCLCPP_INFO(node_->get_logger(), "set_bio_gripper_position, ret=%d, err=%d, curr_pos=%d", ret2, err, curr_pos);
-            is_move = false;
-        }).detach();
-        int cnt = 0;
-        bool is_succeed = false;
-        auto sltime = std::chrono::nanoseconds(1000000000 / bio_gripper_frequency_);
-        while (is_move && rclcpp::ok())
-        {
-            std::this_thread::sleep_for(sltime);
-            ret = arm->get_bio_gripper_position(&curr_pos);
-            if (ret == 0) {
-                if (!is_succeed) {
-                    if (fabs(last_pos - curr_pos) < bio_gripper_threshold_) {
-                        cnt += 1;
-                        if (cnt >= bio_gripper_threshold_times_ && fabs(target_pos - curr_pos) < 15) {
-                            bio_gripper_result_->position = _bio_gripper_pos_convert(curr_pos);
-                            try {
-                                goal_handle->succeed(bio_gripper_result_);
-                            } catch (std::exception &e) {
-                                RCLCPP_ERROR(node_->get_logger(), "bio goal_handle succeed exception, ex=%s", e.what()); 
-                            }
-                            is_succeed = true;
-                        }
-                    }
-                    else {
-                        cnt = 0;
-                        last_pos = curr_pos;
-                    }
-                }
-                bio_gripper_feedback_->position = _bio_gripper_pos_convert(curr_pos);
-                try {
-                    goal_handle->publish_feedback(bio_gripper_feedback_);
-                } catch (std::exception &e) {
-                    RCLCPP_ERROR(node_->get_logger(), "bio goal_handle publish_feedback exception, ex=%s", e.what());
-                }
-                _pub_bio_gripper_joint_states(curr_pos);
-            }
-            // if (goal_handle->is_canceling()) {
-            //     bio_gripper_result_->position = _bio_gripper_pos_convert(curr_pos);
-            //     goal_handle->canceled(bio_gripper_result_);
-            //     RCLCPP_INFO(this->get_logger(), "Goal canceled, curr_pos=%d", curr_pos);
-            //     return;
-            // }
-        }
-        arm->get_bio_gripper_position(&curr_pos);
-        RCLCPP_INFO(node_->get_logger(), "bio move finish, curr_pos=%d", curr_pos);
-        if (rclcpp::ok() && !is_succeed) {
-            bio_gripper_result_->position = _bio_gripper_pos_convert(curr_pos);
-            try {
-                goal_handle->succeed(bio_gripper_result_);
-            } catch (std::exception &e) {
-                RCLCPP_ERROR(node_->get_logger(), "bio goal_handle succeed exception, ex=%s", e.what());
-            }
-            RCLCPP_INFO(node_->get_logger(), "bio Goal succeeded");
-        }
-    }
+   
 
     void XArmDriver::pub_robot_msg(xarm_msgs::msg::RobotMsg &rm_msg)
     {

@@ -7,7 +7,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import IncludeLaunchDescription, TimerAction, GroupAction, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -52,104 +52,14 @@ def generate_launch_description():
         }.items(),
     )
 
-    right_camera = IncludeLaunchDescription(
+    cameras = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
-        ),
-        launch_arguments={
-            #'serial_number': 'AY3794301A0',
-            'usb_port': '4-4.2',
-            'camera_name': 'R_camera',
-            'device_num': '3',
-            'enable_depth': 'true',
-            'depth_fps': '15',
-            'enable_color': 'true',
-            'color_fps': '15',
-            'enable_ir': 'false',
-            'enable_point_cloud': 'false',
-            'enable_colored_point_cloud': 'true',
-            'depth_registration': 'true',
-            'publish_tf': 'false',
-                # QoS for all streams
-            'color_qos':            'SENSOR_DATA',
-            'depth_qos':            'SENSOR_DATA',
-            'ir_qos':               'SENSOR_DATA',
-            'point_cloud_qos':      'SENSOR_DATA',
-            'color_camera_info_qos': 'SENSOR_DATA',
-            'depth_camera_info_qos': 'SENSOR_DATA',
-            'enable_accel': 'false',
-            'enable_gyro': 'false',
-            'enable_publish_extrinsic': 'false',
-        }.items(),
-    )
-
-    left_camera = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(orbbec_camera_dir, 'launch', 'gemini2.launch.py')
-        ),
-        launch_arguments={
-            #'serial_number': 'AY3794301C4',
-            'usb_port': '4-4.3',
-            'camera_name': 'L_camera',
-            'device_num': '3',
-            'enable_depth': 'true',
-            'depth_fps': '15',
-            'enable_color': 'true',
-            'color_fps': '15',
-            'enable_ir': 'false',
-            'enable_point_cloud': 'false',
-            'enable_colored_point_cloud': 'true',
-            'depth_registration': 'true',
-            'publish_tf': 'false',
-                # QoS for all streams
-            'color_qos':            'SENSOR_DATA',
-            'depth_qos':            'SENSOR_DATA',
-            'ir_qos':               'SENSOR_DATA',
-            'point_cloud_qos':      'SENSOR_DATA',
-            'color_camera_info_qos': 'SENSOR_DATA',
-            'depth_camera_info_qos': 'SENSOR_DATA',
-            'enable_accel': 'false',
-            'enable_gyro': 'false',
-            'enable_publish_extrinsic': 'false',
-        }.items(),
-    )
-
-    global_camera = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(orbbec_camera_dir, 'launch', 'femto_bolt.launch.py')
-        ),
-        launch_arguments={
-            #'serial_number': 'CL8855301G8',
-            'usb_port': '2-1',
-            'camera_name': 'G_camera',
-            'device_num': '3',
-            'enable_depth': 'true',
-            'depth_width': '640',
-            'depth_height': '576',
-            'depth_format': 'Y16',
-            'depth_fps': '15',
-            'enable_color': 'true',
-            'color_width': '1920',
-            'color_height': '1080',
-            'color_format': 'MJPG',
-            'color_fps': '15',
-            'enable_ir': 'false',
-            'enable_point_cloud': 'false',
-            'enable_colored_point_cloud': 'true',
-            'depth_registration': 'true',
-            'publish_tf': 'false',
-            'enable_frame_sync': 'true',
-                # QoS for all streams
-            'color_qos':            'SENSOR_DATA',
-            'depth_qos':            'SENSOR_DATA',
-            'ir_qos':               'SENSOR_DATA',
-            'point_cloud_qos':      'SENSOR_DATA',
-            'color_camera_info_qos': 'SENSOR_DATA',
-            'depth_camera_info_qos': 'SENSOR_DATA',
-            'enable_accel': 'false',
-            'enable_gyro': 'false',
-            'enable_publish_extrinsic': 'false',
-        }.items(),
+            os.path.join(
+                xarm_moveit_config_dir,
+                'launch',
+                'multi_camera.launch.py'
+            )
+        )
     )
 
     wall_node = IncludeLaunchDescription(
@@ -158,25 +68,23 @@ def generate_launch_description():
         )
     )
 
-    apriltag_node = Node(
-        package='apriltag_ros',
-        executable='tag_detector',
-        name='apriltag',
-        output='screen',
-        remappings=[
-            ('image', '/G_camera/color/image_raw'),
-            ('camera_info', '/G_camera/color/camera_info'),
-        ],
-        parameters=[
-            os.path.join(apriltag_ros_dir, 'cfg', 'femto_tags.yaml')
-        ],
-    )
+    # apriltag_node = Node(
+    #     package='apriltag_ros',
+    #     executable='tag_detector',
+    #     name='apriltag',
+    #     output='screen',
+    #     remappings=[
+    #         ('image', '/G_camera/color/image_raw'),
+    #         ('camera_info', '/G_camera/color/camera_info'),
+    #     ],
+    #     parameters=[
+    #         os.path.join(apriltag_ros_dir, 'cfg', 'femto_tags.yaml')
+    #     ],
+    # )
 
     return LaunchDescription([
         dual_xarm,
-        TimerAction(period=2.0, actions=[right_camera]),
-        TimerAction(period=3.0, actions=[wall_node]),
-        TimerAction(period=4.0, actions=[left_camera]),
-        TimerAction(period=6.0, actions=[global_camera]),
-        TimerAction(period=8.0, actions=[apriltag_node]),
+        cameras,
+        wall_node,
+        #apriltag_node,
     ])

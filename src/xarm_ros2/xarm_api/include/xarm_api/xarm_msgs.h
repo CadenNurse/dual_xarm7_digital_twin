@@ -6,8 +6,6 @@
 #include <xarm_msgs/msg/cio_state.hpp>
 #include <xarm_msgs/msg/move_velocity.hpp>
 
-#include <xarm_msgs/srv/bio_gripper_ctrl.hpp>
-#include <xarm_msgs/srv/bio_gripper_enable.hpp>
 #include <xarm_msgs/srv/call.hpp>
 #include <xarm_msgs/srv/get_analog_io.hpp>
 #include <xarm_msgs/srv/get_digital_io.hpp>
@@ -24,10 +22,6 @@
 #include <xarm_msgs/srv/move_home.hpp>
 #include <xarm_msgs/srv/move_joint.hpp>
 #include <xarm_msgs/srv/move_velocity.hpp>
-#include <xarm_msgs/srv/robotiq_activate.hpp>
-#include <xarm_msgs/srv/robotiq_get_status.hpp>
-#include <xarm_msgs/srv/robotiq_move.hpp>
-#include <xarm_msgs/srv/robotiq_reset.hpp>
 #include <xarm_msgs/srv/set_analog_io.hpp>
 #include <xarm_msgs/srv/set_digital_io.hpp>
 #include <xarm_msgs/srv/set_float32.hpp>
@@ -40,7 +34,6 @@
 #include <xarm_msgs/srv/set_int32_by_type.hpp>
 #include <xarm_msgs/srv/traj_ctrl.hpp>
 #include <xarm_msgs/srv/traj_play.hpp>
-#include <xarm_msgs/srv/vacuum_gripper_ctrl.hpp>
 #include <xarm_msgs/srv/set_modbus_timeout.hpp>
 #include <xarm_msgs/srv/iden_load.hpp>
 #include <xarm_msgs/srv/ft_cali_load.hpp>

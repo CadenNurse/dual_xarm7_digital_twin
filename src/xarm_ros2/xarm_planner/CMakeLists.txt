@@ -116,10 +116,6 @@ ament_target_dependencies(test_xarm_gripper_planner_client_joint
   ${dependencies}
 )
 
-add_executable(test_lite_gripper_realmove test/test_lite_gripper_realmove.cpp)
-ament_target_dependencies(test_lite_gripper_realmove
-  ${dependencies}
-)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -149,7 +145,6 @@ install(
   test_xarm_planner_client_joint
   test_xarm_planner_client_pose
   test_xarm_gripper_planner_client_joint
-  test_lite_gripper_realmove
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

@@ -53,18 +53,7 @@ void XArmROSClient::init(rclcpp::Node::SharedPtr& node, std::string hw_ns)
 	res_get_analog_io_ = std::make_shared<xarm_msgs::srv::GetAnalogIO::Response>();
 	req_set_digital_io_ = std::make_shared<xarm_msgs::srv::SetDigitalIO::Request>();
 	req_set_analog_io_ = std::make_shared<xarm_msgs::srv::SetAnalogIO::Request>();
-	req_vacuum_gripper_ctrl_ = std::make_shared<xarm_msgs::srv::VacuumGripperCtrl::Request>();
 	req_gripper_move_ = std::make_shared<xarm_msgs::srv::GripperMove::Request>();
-	req_bio_gripper_enable_ = std::make_shared<xarm_msgs::srv::BioGripperEnable::Request>();
-	req_bio_gripper_ctrl_ = std::make_shared<xarm_msgs::srv::BioGripperCtrl::Request>();
-	req_robotiq_reset_ = std::make_shared<xarm_msgs::srv::RobotiqReset::Request>();
-	res_robotiq_reset_ = std::make_shared<xarm_msgs::srv::RobotiqReset::Response>();
-	req_robotiq_activate_ = std::make_shared<xarm_msgs::srv::RobotiqActivate::Request>();
-	res_robotiq_activate_ = std::make_shared<xarm_msgs::srv::RobotiqActivate::Response>();
-	req_robotiq_move_ = std::make_shared<xarm_msgs::srv::RobotiqMove::Request>();
-	res_robotiq_move_ = std::make_shared<xarm_msgs::srv::RobotiqMove::Response>();
-	req_robotiq_get_status_ = std::make_shared<xarm_msgs::srv::RobotiqGetStatus::Request>();
-	res_robotiq_get_status_ = std::make_shared<xarm_msgs::srv::RobotiqGetStatus::Response>();
 	req_getset_modbus_data_ = std::make_shared<xarm_msgs::srv::GetSetModbusData::Request>();
 	res_getset_modbus_data_ = std::make_shared<xarm_msgs::srv::GetSetModbusData::Response>();
 	req_traj_ctrl_ = std::make_shared<xarm_msgs::srv::TrajCtrl::Request>();
@@ -78,16 +67,12 @@ void XArmROSClient::init(rclcpp::Node::SharedPtr& node, std::string hw_ns)
     client_set_counter_reset_ = _create_client<xarm_msgs::srv::Call>("set_counter_reset");
     client_set_counter_increase_ = _create_client<xarm_msgs::srv::Call>("set_counter_increase");
     client_clean_gripper_error_ = _create_client<xarm_msgs::srv::Call>("clean_gripper_error");
-    client_clean_bio_gripper_error_ = _create_client<xarm_msgs::srv::Call>("clean_bio_gripper_error");
     client_start_record_trajectory_ = _create_client<xarm_msgs::srv::Call>("start_record_trajectory");
     client_stop_record_trajectory_ = _create_client<xarm_msgs::srv::Call>("stop_record_trajectory");
 
     client_get_state_ = _create_client<xarm_msgs::srv::GetInt16>("get_state");
     client_get_cmdnum_ = _create_client<xarm_msgs::srv::GetInt16>("get_cmdnum");
-    client_get_vacuum_gripper_ = _create_client<xarm_msgs::srv::GetInt16>("get_vacuum_gripper");
     client_get_gripper_err_code_ = _create_client<xarm_msgs::srv::GetInt16>("get_gripper_err_code");
-    client_get_bio_gripper_status_ = _create_client<xarm_msgs::srv::GetInt16>("get_bio_gripper_status");
-    client_get_bio_gripper_error_ = _create_client<xarm_msgs::srv::GetInt16>("get_bio_gripper_error");
     
     client_get_err_warn_code_ = _create_client<xarm_msgs::srv::GetInt16List>("get_err_warn_code");
     
@@ -98,7 +83,6 @@ void XArmROSClient::init(rclcpp::Node::SharedPtr& node, std::string hw_ns)
     client_set_gripper_mode_ = _create_client<xarm_msgs::srv::SetInt16>("set_gripper_mode");
     client_set_gripper_enable_ = _create_client<xarm_msgs::srv::SetInt16>("set_gripper_enable");
     client_set_tgpio_modbus_timeout_ = _create_client<xarm_msgs::srv::SetInt16>("set_tgpio_modbus_timeout");
-    client_set_bio_gripper_speed_ = _create_client<xarm_msgs::srv::SetInt16>("set_bio_gripper_speed");
     client_set_collision_rebound_ = _create_client<xarm_msgs::srv::SetInt16>("set_collision_rebound");
     client_set_fence_mode_ = _create_client<xarm_msgs::srv::SetInt16>("set_fence_mode");
     client_set_reduced_mode_ = _create_client<xarm_msgs::srv::SetInt16>("set_reduced_mode");
@@ -172,23 +156,8 @@ void XArmROSClient::init(rclcpp::Node::SharedPtr& node, std::string hw_ns)
     client_set_cgpio_analog_ = _create_client<xarm_msgs::srv::SetAnalogIO>("set_cgpio_analog");
     client_set_cgpio_analog_with_xyz_ = _create_client<xarm_msgs::srv::SetAnalogIO>("set_cgpio_analog_with_xyz");
 
-    client_set_vacuum_gripper_ = _create_client<xarm_msgs::srv::VacuumGripperCtrl>("set_vacuum_gripper");
-
     client_set_gripper_position_ = _create_client<xarm_msgs::srv::GripperMove>("set_gripper_position");
     
-    client_set_bio_gripper_enable_ = _create_client<xarm_msgs::srv::BioGripperEnable>("set_bio_gripper_enable");
-    
-    client_open_bio_gripper_ = _create_client<xarm_msgs::srv::BioGripperCtrl>("open_bio_gripper");
-    client_close_bio_gripper_ = _create_client<xarm_msgs::srv::BioGripperCtrl>("close_bio_gripper");
-    
-    client_robotiq_reset_ = _create_client<xarm_msgs::srv::RobotiqReset>("robotiq_reset");
-
-    client_robotiq_set_activate_ = _create_client<xarm_msgs::srv::RobotiqActivate>("robotiq_set_activate");
-
-    client_robotiq_set_position_ = _create_client<xarm_msgs::srv::RobotiqMove>("robotiq_set_position");
-
-    client_robotiq_get_status_ = _create_client<xarm_msgs::srv::RobotiqGetStatus>("robotiq_get_status");
-
     client_getset_tgpio_modbus_data_ = _create_client<xarm_msgs::srv::GetSetModbusData>("getset_tgpio_modbus_data");
 
     client_save_record_trajectory_ = _create_client<xarm_msgs::srv::TrajCtrl>("save_record_trajectory");
@@ -307,11 +276,6 @@ int XArmROSClient::clean_gripper_error()
     return _call_request(client_clean_gripper_error_, req_call_);
 }
 
-int XArmROSClient::clean_bio_gripper_error()
-{
-    return _call_request(client_clean_bio_gripper_error_, req_call_);
-}
-
 int XArmROSClient::start_record_trajectory()
 {
     return _call_request(client_start_record_trajectory_, req_call_);
@@ -336,27 +300,10 @@ int XArmROSClient::get_cmdnum(int *cmdnum)
     *cmdnum = res_get_int16_->data;
     return ret;
 }
-int XArmROSClient::get_vacuum_gripper(int *status)
-{
-    int ret = _call_request(client_get_vacuum_gripper_, req_get_int16_, res_get_int16_);
-    *status = res_get_int16_->data;
-    return ret;
-}
+
 int XArmROSClient::get_gripper_err_code(int *err)
 {
     int ret = _call_request(client_get_gripper_err_code_, req_get_int16_, res_get_int16_);
-    *err = res_get_int16_->data;
-    return ret;
-}
-int XArmROSClient::get_bio_gripper_status(int *status)
-{
-    int ret = _call_request(client_get_bio_gripper_status_, req_get_int16_, res_get_int16_);
-    *status = res_get_int16_->data;
-    return ret;
-}
-int XArmROSClient::get_bio_gripper_error(int *err)
-{
-    int ret = _call_request(client_get_bio_gripper_error_, req_get_int16_, res_get_int16_);
     *err = res_get_int16_->data;
     return ret;
 }
@@ -413,12 +360,6 @@ int XArmROSClient::set_tgpio_modbus_timeout(int timeout)
 {
     req_set_int16_->data = timeout;
     return _call_request(client_set_tgpio_modbus_timeout_, req_set_int16_);
-}
-
-int XArmROSClient::set_bio_gripper_speed(int speed)
-{
-    req_set_int16_->data = speed;
-    return _call_request(client_set_bio_gripper_speed_, req_set_int16_);
 }
 
 int XArmROSClient::set_collision_rebound(bool on)
@@ -902,16 +843,6 @@ int XArmROSClient::set_cgpio_analog_with_xyz(int ionum, fp32 value, const std::v
     return _call_request(client_set_cgpio_analog_with_xyz_, req_set_analog_io_);
 }
 
-// VacuumGripperCtrl
-int XArmROSClient::set_vacuum_gripper(bool on, bool wait, float timeout, float delay_sec)
-{
-    req_vacuum_gripper_ctrl_->on = on;
-    req_vacuum_gripper_ctrl_->wait = wait;
-    req_vacuum_gripper_ctrl_->timeout = timeout;
-    req_vacuum_gripper_ctrl_->delay_sec = delay_sec;
-    return _call_request(client_set_vacuum_gripper_, req_vacuum_gripper_ctrl_);
-}
-
 // GripperMove
 int XArmROSClient::set_gripper_position(fp32 pos, bool wait, fp32 timeout)
 {
@@ -919,203 +850,6 @@ int XArmROSClient::set_gripper_position(fp32 pos, bool wait, fp32 timeout)
     req_gripper_move_->wait = wait;
     req_gripper_move_->timeout = timeout;
     return _call_request(client_set_gripper_position_, req_gripper_move_);
-}
-
-// BioGripperEnable
-int XArmROSClient::set_bio_gripper_enable(bool enable, bool wait, fp32 timeout)
-{
-    req_bio_gripper_enable_->enable = enable;
-    req_bio_gripper_enable_->wait = wait;
-    req_bio_gripper_enable_->timeout = timeout;
-    return _call_request(client_set_bio_gripper_enable_, req_bio_gripper_enable_);
-}
-
-// BioGripperCtrl
-int XArmROSClient::open_bio_gripper(int speed, bool wait, fp32 timeout)
-{
-    req_bio_gripper_ctrl_->speed = speed;
-    req_bio_gripper_ctrl_->wait = wait;
-    req_bio_gripper_ctrl_->timeout = timeout;
-    return _call_request(client_open_bio_gripper_, req_bio_gripper_ctrl_);
-}
-
-int XArmROSClient::open_bio_gripper(bool wait, fp32 timeout)
-{
-    return open_bio_gripper(0, wait, timeout);
-}
-
-int XArmROSClient::close_bio_gripper(int speed, bool wait, fp32 timeout)
-{
-    req_bio_gripper_ctrl_->speed = speed;
-    req_bio_gripper_ctrl_->wait = wait;
-    req_bio_gripper_ctrl_->timeout = timeout;
-    return _call_request(client_close_bio_gripper_, req_bio_gripper_ctrl_);
-}
-
-int XArmROSClient::close_bio_gripper(bool wait, fp32 timeout)
-{
-    return close_bio_gripper(0, wait, timeout);
-}
-
-// RobotiqReset
-int XArmROSClient::robotiq_reset()
-{
-    return _call_request(client_robotiq_reset_, req_robotiq_reset_, res_robotiq_reset_);
-}
-// int XArmROSClient::robotiq_reset(std::vector<unsigned char>& ret_data)
-// {
-//     int ret = _call_request(client_robotiq_reset_, req_robotiq_reset_, res_robotiq_reset_);
-//     ret_data.resize(6);
-//     ret_data.assign(res_robotiq_reset_->ret_data.begin(), res_robotiq_reset_->ret_data.end());
-//     return ret;
-// }
-
-// RobotiqActivate
-int XArmROSClient::robotiq_set_activate(bool wait, fp32 timeout)
-{
-    req_robotiq_activate_->wait = wait;
-    req_robotiq_activate_->timeout = timeout;
-    return  _call_request(client_robotiq_set_activate_, req_robotiq_activate_, res_robotiq_activate_);
-}
-// int XArmROSClient::robotiq_set_activate(bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     req_robotiq_activate_->wait = wait;
-//     req_robotiq_activate_->timeout = timeout;
-//     int ret = _call_request(client_robotiq_set_activate_, req_robotiq_activate_, res_robotiq_activate_);
-//     if (ret_data != NULL) {
-//         for (int i = 0; i < 6; i++) {
-//             ret_data[i] = res_robotiq_activate_->ret_data[i];
-//         }
-//     }
-//     return ret;
-// }
-
-// int XArmROSClient::robotiq_set_activate(bool wait, unsigned char ret_data[6])
-// {
-//     return robotiq_set_activate(wait, 3, ret_data);
-// }
-
-// int XArmROSClient::robotiq_set_activate(unsigned char ret_data[6])
-// {
-//     return robotiq_set_activate(true, 3, ret_data);
-// }
-
-// RobotiqMove
-int XArmROSClient::robotiq_set_position(unsigned char pos, unsigned char speed, unsigned char force, bool wait, fp32 timeout)
-{
-    req_robotiq_move_->pos = pos;
-    req_robotiq_move_->speed = speed;
-    req_robotiq_move_->force = force;
-    req_robotiq_move_->wait = wait;
-    req_robotiq_move_->timeout = timeout;
-    return _call_request(client_robotiq_set_position_, req_robotiq_move_, res_robotiq_move_);
-}
-
-int XArmROSClient::robotiq_set_position(unsigned char pos, bool wait, fp32 timeout)
-{
-    return robotiq_set_position(pos, 0xFF, 0xFF, wait, timeout);
-}
-
-int XArmROSClient::robotiq_open(unsigned char speed, unsigned char force, bool wait, fp32 timeout)
-{
-    return robotiq_set_position(0x00, speed, force, wait, timeout);
-}
-
-int XArmROSClient::robotiq_open(bool wait, fp32 timeout)
-{
-    return robotiq_open(0xFF, 0xFF, wait, timeout);
-}
-
-int XArmROSClient::robotiq_close(unsigned char speed, unsigned char force, bool wait, fp32 timeout)
-{
-    return robotiq_set_position(0xFF, speed, force, wait, timeout);
-}
-
-int XArmROSClient::robotiq_close(bool wait, fp32 timeout)
-{
-    return robotiq_close(0xFF, 0xFF, wait, timeout);
-}
-// int XArmROSClient::robotiq_set_position(unsigned char pos, unsigned char speed, unsigned char force, bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     req_robotiq_move_->pos = pos;
-//     req_robotiq_move_->speed = speed;
-//     req_robotiq_move_->force = force;
-//     req_robotiq_move_->wait = wait;
-//     req_robotiq_move_->timeout = timeout;
-//     int ret = _call_request(client_robotiq_set_position_, req_robotiq_move_, res_robotiq_move_);
-//     if (ret_data != NULL) {
-//         for (int i = 0; i < 6; i++) {
-//             ret_data[i] = res_robotiq_move_->ret_data[i];
-//         }
-//     }
-//     return ret;
-// }
-
-// int XArmROSClient::robotiq_set_position(unsigned char pos, bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(pos, 0xFF, 0xFF, wait, timeout, ret_data);
-// }
-
-// int XArmROSClient::robotiq_set_position(unsigned char pos, bool wait, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(pos, wait, 5, ret_data);
-// }
-
-// int XArmROSClient::robotiq_set_position(unsigned char pos, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(pos, true, ret_data);
-// }
-
-// int XArmROSClient::robotiq_open(unsigned char speed, unsigned char force, bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(0x00, speed, force, wait, timeout, ret_data);
-// }
-
-// int XArmROSClient::robotiq_open(bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(0x00, wait, timeout, ret_data);
-// }
-
-// int XArmROSClient::robotiq_open(bool wait, unsigned char ret_data[6])
-// {
-//     return robotiq_open(wait, 5, ret_data);
-// }
-
-// int XArmROSClient::robotiq_open(unsigned char ret_data[6])
-// {
-//     return robotiq_open(true, ret_data);
-// }
-
-// int XArmROSClient::robotiq_close(unsigned char speed, unsigned char force, bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(0xFF, speed, force, wait, timeout, ret_data);
-// }
-
-// int XArmROSClient::robotiq_close(bool wait, fp32 timeout, unsigned char ret_data[6])
-// {
-//     return robotiq_set_position(0xFF, wait, timeout, ret_data);
-// }
-
-// int XArmROSClient::robotiq_close(bool wait, unsigned char ret_data[6])
-// {
-//     return robotiq_close(wait, 5, ret_data);
-// }
-
-// int XArmROSClient::robotiq_close(unsigned char ret_data[6])
-// {
-//     return robotiq_close(true, ret_data);
-// }
-
-// RobotiqGetStatus
-int XArmROSClient::robotiq_get_status(std::vector<unsigned char>& ret_data, unsigned char number_of_registers)
-{
-    req_robotiq_get_status_->number_of_registers = number_of_registers;
-    int ret = _call_request(client_robotiq_get_status_, req_robotiq_get_status_, res_robotiq_get_status_);
-    ret_data.resize(9);
-    ret_data.swap(res_robotiq_get_status_->ret_data);
-    // ret_data.assign(res_robotiq_get_status_->ret_data.begin(), res_robotiq_get_status_->ret_data.end());
-    res_robotiq_get_status_->ret_data.clear();
-    return ret;
 }
 
 // GetSetModbusData

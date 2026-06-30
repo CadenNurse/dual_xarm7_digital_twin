@@ -51,7 +51,6 @@ namespace xarm_api
         service_set_counter_reset_ = _create_service<xarm_msgs::srv::Call>("set_counter_reset", &XArmDriver::_set_counter_reset);
         service_set_counter_increase_ = _create_service<xarm_msgs::srv::Call>("set_counter_increase", &XArmDriver::_set_counter_increase);
         service_clean_gripper_error_ = _create_service<xarm_msgs::srv::Call>("clean_gripper_error", &XArmDriver::_clean_gripper_error);
-        service_clean_bio_gripper_error_ = _create_service<xarm_msgs::srv::Call>("clean_bio_gripper_error", &XArmDriver::_clean_bio_gripper_error);
         service_start_record_trajectory_ = _create_service<xarm_msgs::srv::Call>("start_record_trajectory", &XArmDriver::_start_record_trajectory);
         service_stop_record_trajectory_ = _create_service<xarm_msgs::srv::Call>("stop_record_trajectory", &XArmDriver::_stop_record_trajectory);
         service_set_ft_sensor_zero_ = _create_service<xarm_msgs::srv::Call>("set_ft_sensor_zero", &XArmDriver::_set_ft_sensor_zero);
@@ -68,10 +67,7 @@ namespace xarm_api
         // GetInt16
         service_get_state_ = _create_service<xarm_msgs::srv::GetInt16>("get_state", &XArmDriver::_get_state);
         service_get_cmdnum_ = _create_service<xarm_msgs::srv::GetInt16>("get_cmdnum", &XArmDriver::_get_cmdnum);
-        service_get_vacuum_gripper_ = _create_service<xarm_msgs::srv::GetInt16>("get_vacuum_gripper", &XArmDriver::_get_vacuum_gripper);
         service_get_gripper_err_code_ = _create_service<xarm_msgs::srv::GetInt16>("get_gripper_err_code", &XArmDriver::_get_gripper_err_code);
-        service_get_bio_gripper_status_ = _create_service<xarm_msgs::srv::GetInt16>("get_bio_gripper_status", &XArmDriver::_get_bio_gripper_status);
-        service_get_bio_gripper_error_ = _create_service<xarm_msgs::srv::GetInt16>("get_bio_gripper_error", &XArmDriver::_get_bio_gripper_error);
         service_get_reduced_mode_ = _create_service<xarm_msgs::srv::GetInt16>("get_reduced_mode", &XArmDriver::_get_reduced_mode);
         service_get_report_tau_or_i_ = _create_service<xarm_msgs::srv::GetInt16>("get_report_tau_or_i", &XArmDriver::_get_report_tau_or_i);
         service_get_ft_sensor_mode_ = _create_service<xarm_msgs::srv::GetInt16>("get_ft_sensor_mode", &XArmDriver::_get_ft_sensor_mode);
@@ -105,7 +101,6 @@ namespace xarm_api
         service_set_teach_sensitivity_ = _create_service<xarm_msgs::srv::SetInt16>("set_teach_sensitivity", &XArmDriver::_set_teach_sensitivity);
         service_set_gripper_mode_ = _create_service<xarm_msgs::srv::SetInt16>("set_gripper_mode", &XArmDriver::_set_gripper_mode);
         service_set_gripper_enable_ = _create_service<xarm_msgs::srv::SetInt16>("set_gripper_enable", &XArmDriver::_set_gripper_enable);
-        service_set_bio_gripper_speed_ = _create_service<xarm_msgs::srv::SetInt16>("set_bio_gripper_speed", &XArmDriver::_set_bio_gripper_speed);
         service_set_collision_rebound_ = _create_service<xarm_msgs::srv::SetInt16>("set_collision_rebound", &XArmDriver::_set_collision_rebound);
         service_set_fence_mode_ = _create_service<xarm_msgs::srv::SetInt16>("set_fence_mode", &XArmDriver::_set_fence_mode);
         service_set_reduced_mode_ = _create_service<xarm_msgs::srv::SetInt16>("set_reduced_mode", &XArmDriver::_set_reduced_mode);
@@ -217,33 +212,9 @@ namespace xarm_api
         service_set_cgpio_analog_ = _create_service<xarm_msgs::srv::SetAnalogIO>("set_cgpio_analog", &XArmDriver::_set_cgpio_analog);
         service_set_cgpio_analog_with_xyz_ = _create_service<xarm_msgs::srv::SetAnalogIO>("set_cgpio_analog_with_xyz", &XArmDriver::_set_cgpio_analog_with_xyz);
         
-        // VacuumGripperCtrl
-        service_set_vacuum_gripper_ = _create_service<xarm_msgs::srv::VacuumGripperCtrl>("set_vacuum_gripper", &XArmDriver::_set_vacuum_gripper);
-        
         // GripperMove
         service_set_gripper_position_ = _create_service<xarm_msgs::srv::GripperMove>("set_gripper_position", &XArmDriver::_set_gripper_position);
-        
-        // BioGripperEnable
-        service_set_bio_gripper_enable_ = _create_service<xarm_msgs::srv::BioGripperEnable>("set_bio_gripper_enable", &XArmDriver::_set_bio_gripper_enable);
-        
-        // BioGripperCtrl
-        service_open_bio_gripper_ = _create_service<xarm_msgs::srv::BioGripperCtrl>("open_bio_gripper", &XArmDriver::_open_bio_gripper);
-        service_close_bio_gripper_ = _create_service<xarm_msgs::srv::BioGripperCtrl>("close_bio_gripper", &XArmDriver::_close_bio_gripper);
-        
-        // RobotiqReset
-        service_robotiq_reset_ = _create_service<xarm_msgs::srv::RobotiqReset>("robotiq_reset", &XArmDriver::_robotiq_reset);
-        
-        // RobotiqActivate
-        service_robotiq_set_activate_ = _create_service<xarm_msgs::srv::RobotiqActivate>("robotiq_set_activate", &XArmDriver::_robotiq_set_activate);
-        
-        // RobotiqMove
-        service_robotiq_set_position_ = _create_service<xarm_msgs::srv::RobotiqMove>("robotiq_set_position", &XArmDriver::_robotiq_set_position);
-        service_robotiq_open_ = _create_service<xarm_msgs::srv::RobotiqMove>("robotiq_open", &XArmDriver::_robotiq_open);
-        service_robotiq_close_ = _create_service<xarm_msgs::srv::RobotiqMove>("robotiq_close", &XArmDriver::_robotiq_close);
-        
-        // RobotiqGetStatus
-        service_robotiq_get_status_ = _create_service<xarm_msgs::srv::RobotiqGetStatus>("robotiq_get_status", &XArmDriver::_robotiq_get_status);
-        
+               
         // SetModbusTimeout
         service_set_tgpio_modbus_timeout_ = _create_service<xarm_msgs::srv::SetModbusTimeout>("set_tgpio_modbus_timeout", &XArmDriver::_set_tgpio_modbus_timeout);
 
@@ -344,13 +315,7 @@ namespace xarm_api
         res->ret = arm->clean_gripper_error();
         return true;
     }
-
-    bool XArmDriver::_clean_bio_gripper_error(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res)
-    {
-        res->ret = arm->clean_bio_gripper_error();
-        return true;
-    }
-    
+  
     bool XArmDriver::_start_record_trajectory(const std::shared_ptr<xarm_msgs::srv::Call::Request> req, std::shared_ptr<xarm_msgs::srv::Call::Response> res)
     {
         res->ret = arm->start_record_trajectory();
@@ -413,30 +378,9 @@ namespace xarm_api
         return true; 
     }
 
-    bool XArmDriver::_get_vacuum_gripper(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res)
-    {
-        res->ret = arm->get_vacuum_gripper((int *)&res->data, vacuum_gripper_hardware_version_ != 0 ? vacuum_gripper_hardware_version_ : 1);
-        res->message = "hardware_version=" + std::to_string(vacuum_gripper_hardware_version_) + ", data=" + std::to_string(res->data);
-        return true;
-    }
-
     bool XArmDriver::_get_gripper_err_code(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res)
     {
         res->ret = arm->get_gripper_err_code((int *)&res->data);
-        res->message = "data=" + std::to_string(res->data);
-        return true;
-    }
-
-    bool XArmDriver::_get_bio_gripper_status(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res)
-    {
-        res->ret = arm->get_bio_gripper_status((int *)&res->data);
-        res->message = "data=" + std::to_string(res->data);
-        return true;
-    }
-
-    bool XArmDriver::_get_bio_gripper_error(const std::shared_ptr<xarm_msgs::srv::GetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res)
-    {
-        res->ret = arm->get_bio_gripper_error((int *)&res->data);
         res->message = "data=" + std::to_string(res->data);
         return true;
     }
@@ -588,13 +532,6 @@ namespace xarm_api
         res->ret = arm->set_tgpio_modbus_timeout(req->timeout, req->is_transparent_transmission);
         res->message = "data=" + std::to_string(req->timeout);
         return true;  
-    }
-
-    bool XArmDriver::_set_bio_gripper_speed(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res)
-    {
-        res->ret = arm->set_bio_gripper_speed(req->data);
-        res->message = "data=" + std::to_string(req->data);
-        return true; 
     }
 
     bool XArmDriver::_set_collision_rebound(const std::shared_ptr<xarm_msgs::srv::SetInt16::Request> req, std::shared_ptr<xarm_msgs::srv::SetInt16::Response> res)
@@ -1205,80 +1142,9 @@ namespace xarm_api
         return true;
     }
 
-    bool XArmDriver::_set_vacuum_gripper(const std::shared_ptr<xarm_msgs::srv::VacuumGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::VacuumGripperCtrl::Response> res)
-    {
-        if (req->hardware_version == 1 || req->hardware_version == 2) {
-            vacuum_gripper_hardware_version_ = req->hardware_version;
-        }
-        int hardware_version = req->hardware_version == 1 || req->hardware_version == 2 ? req->hardware_version : 1;
-        res->ret = arm->set_vacuum_gripper(req->on, req->wait, req->timeout, req->delay_sec, req->sync, hardware_version);
-        res->message = "hardware_version=" + std::to_string(vacuum_gripper_hardware_version_);
-        return true;
-    }
-
     bool XArmDriver::_set_gripper_position(const std::shared_ptr<xarm_msgs::srv::GripperMove::Request> req, std::shared_ptr<xarm_msgs::srv::GripperMove::Response> res)
     {
         res->ret = arm->set_gripper_position(req->pos, req->wait, req->timeout);
-        return true;
-    }
-
-    bool XArmDriver::_set_bio_gripper_enable(const std::shared_ptr<xarm_msgs::srv::BioGripperEnable::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperEnable::Response> res)
-    {
-        res->ret = arm->set_bio_gripper_enable(req->enable, req->wait, req->timeout);
-        return true;
-    }
-
-    bool XArmDriver::_open_bio_gripper(const std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Response> res)
-    {
-        res->ret = arm->open_bio_gripper(req->speed, req->wait, req->timeout);
-        return true;
-    }
-
-    bool XArmDriver::_close_bio_gripper(const std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Request> req, std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Response> res)        
-    {
-        res->ret = arm->close_bio_gripper(req->speed, req->wait, req->timeout);
-        return true;
-    }
-
-    bool XArmDriver::_robotiq_reset(const std::shared_ptr<xarm_msgs::srv::RobotiqReset::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqReset::Response> res)
-    {
-        res->ret_data.resize(6);
-        res->ret = arm->robotiq_reset(&res->ret_data[0]);
-        return true;
-    }
-
-    bool XArmDriver::_robotiq_set_activate(const std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Response> res)
-    {
-        res->ret_data.resize(6);
-        res->ret = arm->robotiq_set_activate(req->wait, req->timeout, &res->ret_data[0]);
-        return true; 
-    }
-
-    bool XArmDriver::_robotiq_set_position(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res)
-    {
-        res->ret_data.resize(6);
-        res->ret = arm->robotiq_set_position(req->pos, req->speed, req->force, req->wait, req->timeout, &res->ret_data[0]);
-        return true;
-    }
-
-    bool XArmDriver::_robotiq_open(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res)
-    {
-        res->ret_data.resize(6);
-        res->ret = arm->robotiq_open(req->speed, req->force, req->wait, req->timeout, &res->ret_data[0]);
-        return true;
-    }
-
-    bool XArmDriver::_robotiq_close(const std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res)
-    {
-        res->ret_data.resize(6);
-        res->ret = arm->robotiq_close(req->speed, req->force, req->wait, req->timeout, &res->ret_data[0]);
-        return true;
-    }
-
-    bool XArmDriver::_robotiq_get_status(const std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Request> req, std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Response> res)
-    {
-        res->ret_data.resize(9);
-        res->ret = arm->robotiq_get_status(&res->ret_data[0], req->number_of_registers);
         return true;
     }
 

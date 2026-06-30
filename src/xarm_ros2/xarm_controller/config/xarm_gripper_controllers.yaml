@@ -1,11 +1,11 @@
 controller_manager:
   ros__parameters:
     # only for fake control
-    xarm_gripper_traj_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
+    xarm_gripper_controller:
+      type: joint_trajectory_controller/GripperActionController
 
 # only for fake control
-xarm_gripper_traj_controller:
+xarm_gripper_controller:
   ros__parameters:
     command_interfaces:
       - position

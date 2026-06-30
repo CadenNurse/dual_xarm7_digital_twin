@@ -5,12 +5,9 @@ from launch_ros.actions import Node
 from launch.actions import OpaqueFunction
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
-# from uf_ros_lib.uf_robot_utils import generate_dual_ros2_control_params_temp_file
+from uf_ros_lib.uf_robot_utils import generate_dual_ros2_control_params_temp_file
 from uf_ros_lib.moveit_configs_builder import DualMoveItConfigsBuilder
-import yaml 
-# Import yaml for the trajectory override
-import pprint
-#for pprint for debugging
+
 
 def launch_setup(context, *args, **kwargs):
     robot_ip_1 = LaunchConfiguration('robot_ip_1')
@@ -37,22 +34,19 @@ def launch_setup(context, *args, **kwargs):
     xarm_type_1 = '{}{}'.format(robot_type_1.perform(context), dof_1.perform(context) if robot_type_1.perform(context) in ('xarm', 'lite') else '')
     xarm_type_2 = '{}{}'.format(robot_type_2.perform(context), dof_2.perform(context) if robot_type_2.perform(context) in ('xarm', 'lite') else '')
     
-    xarm_moveit_config_dir = get_package_share_directory('xarm_moveit_config')
-
-    dual_arm_ros2_controllers_path = os.path.join(
-        xarm_moveit_config_dir,
-        'config',
-        'dual_arm',
-        'ros2_controllers.yaml'
+    # ros2_controllers_path
+    ros2_controllers_path = generate_dual_ros2_control_params_temp_file(
+        os.path.join(get_package_share_directory('xarm_controller'), 'config', '{}_controllers.yaml'.format(xarm_type_1)),
+        os.path.join(get_package_share_directory('xarm_controller'), 'config', '{}_controllers.yaml'.format(xarm_type_2)),
+        prefix_1=prefix_1.perform(context), 
+        prefix_2=prefix_2.perform(context), 
+        add_gripper_1=add_gripper_1.perform(context) in ('True', 'true'),
+        add_gripper_2=add_gripper_2.perform(context) in ('True', 'true'),
+        add_bio_gripper_1=add_bio_gripper_1.perform(context) in ('True', 'true'),
+        add_bio_gripper_2=add_bio_gripper_2.perform(context) in ('True', 'true'),
+        robot_type_1=robot_type_1.perform(context), 
+        robot_type_2=robot_type_2.perform(context), 
     )
-
-    dual_arm_moveit_controllers_path = os.path.join(
-        xarm_moveit_config_dir,
-        'config',
-        'dual_arm',
-        'moveit_controllers.yaml'
-    )
-
 
     moveit_config = DualMoveItConfigsBuilder(
         context=context,
@@ -73,34 +67,31 @@ def launch_setup(context, *args, **kwargs):
         add_bio_gripper_1=add_bio_gripper_1,
         add_bio_gripper_2=add_bio_gripper_2,
         ros2_control_plugin='uf_robot_hardware/UFRobotSystemHardware',
-        ros2_control_params=dual_arm_ros2_controllers_path, # added dual_arm_ in front of ros2_...
+        ros2_control_params=ros2_controllers_path,
     ).to_moveit_configs()
-
-    # load personallized controllers overtop of generated ones in moveit_config.to_dict()
-    with open(dual_arm_moveit_controllers_path, "r") as f:
-        moveit_controllers = yaml.safe_load(f)
 
     # Start the actual move_group node/action server
     move_group_node = Node(
         package='moveit_ros_move_group',
         executable='move_group',
         output='screen',
-        parameters=[
-            moveit_config.to_dict(),
-            moveit_controllers,
-        ],
+        parameters=[moveit_config.to_dict()],
     )
 
     # Launch RViz
-    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_moveit_camera.rviz'])
+    rviz_config = PathJoinSubstitution([FindPackageShare('xarm_moveit_config'), 'rviz', 'dual_moveit.rviz'])
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
-        #name='rviz2',
+        name='rviz2',
         output='screen',
         arguments=['-d', rviz_config],
         parameters=[
-            moveit_config.to_dict(),
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.planning_pipelines,
+            moveit_config.joint_limits,
         ],
     )
 
@@ -128,39 +119,25 @@ def launch_setup(context, *args, **kwargs):
         parameters=[moveit_config.robot_description],
     )
 
-    # DEBUGGING
-    # print("USING ROS2 CONTROLLERS FILE:", dual_arm_ros2_controllers_path)
-    # print("USING MOVEIT CONTROLLERS FILE:", dual_arm_moveit_controllers_path)
-    # with open(dual_arm_moveit_controllers_path, "r") as f:
-    #     print(f.read())
-    # pp = pprint.PrettyPrinter(depth=6)
-    # pp.pprint(moveit_config.to_dict())
-    # print(moveit_config.to_dict().get("moveit_simple_controller_manager", {}))
-
     ros2_control_node = Node(
         package='controller_manager',
         executable='ros2_control_node',
         parameters=[
             moveit_config.robot_description,
-            dual_arm_ros2_controllers_path, # added dual_arm_ in front of ros2_...
+            ros2_controllers_path,
         ],
         output='screen',
     )
 
-    # no need to remap the same as joint state publisher
-    # remappings = [
-    #     ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_1.perform(context), xarm_type_1)),
-    #     ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_2.perform(context), xarm_type_2)),            
-    # ]
+    remappings = [
+        ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_1.perform(context), xarm_type_1)),
+        ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_2.perform(context), xarm_type_2)),            
+    ]
     controllers = [
-        'joint_state_broadcaster',
         '{}{}_traj_controller'.format(prefix_1.perform(context), xarm_type_1),
         '{}{}_traj_controller'.format(prefix_2.perform(context), xarm_type_2),
-        '{}xarm_gripper'.format(prefix_1.perform(context), xarm_type_1),
-        '{}xarm_gripper'.format(prefix_2.perform(context), xarm_type_2),
-    ]    
+    ]
     
-    #Consider using joint_state_broadcaster instead of joint_state_publisher for better performance
     joint_state_publisher_node = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -172,7 +149,7 @@ def launch_setup(context, *args, **kwargs):
                 '{}{}/joint_states'.format(prefix_2.perform(context), hw_ns.perform(context))
             ], 
         }],
-        #remappings=remappings, # removed as remapping was removed above
+        remappings=remappings,
     )
 
     controller_nodes = []
@@ -183,8 +160,7 @@ def launch_setup(context, *args, **kwargs):
             output='screen',
             arguments=[
                 controller,
-                '--controller-manager', '/controller_manager',
-                #'--param-file', dual_arm_ros2_controllers_path,
+                '--controller-manager', '/controller_manager'
             ],
         ))
     
@@ -192,8 +168,8 @@ def launch_setup(context, *args, **kwargs):
         robot_state_publisher,
         joint_state_publisher_node,
         move_group_node,
-        #static_tf_1,
-        #static_tf_2,
+        static_tf_1,
+        static_tf_2,
         ros2_control_node,
         rviz_node,
     ] + controller_nodes

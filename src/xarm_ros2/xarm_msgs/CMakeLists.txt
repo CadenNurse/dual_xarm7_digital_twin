@@ -45,8 +45,6 @@ set(msg_files
 
 set(srv_dir "srv")
 set(srv_files
-  ${srv_dir}/BioGripperCtrl.srv
-  ${srv_dir}/BioGripperEnable.srv
   ${srv_dir}/Call.srv
   ${srv_dir}/GetAnalogIO.srv
   ${srv_dir}/GetDigitalIO.srv
@@ -63,10 +61,6 @@ set(srv_files
   ${srv_dir}/MoveHome.srv
   ${srv_dir}/MoveJoint.srv
   ${srv_dir}/MoveVelocity.srv
-  ${srv_dir}/RobotiqActivate.srv
-  ${srv_dir}/RobotiqGetStatus.srv
-  ${srv_dir}/RobotiqMove.srv
-  ${srv_dir}/RobotiqReset.srv
   ${srv_dir}/SetAnalogIO.srv
   ${srv_dir}/SetDigitalIO.srv
   ${srv_dir}/SetFloat32.srv
@@ -78,7 +72,6 @@ set(srv_files
   ${srv_dir}/SetInt32ByType.srv
   ${srv_dir}/TrajCtrl.srv
   ${srv_dir}/TrajPlay.srv
-  ${srv_dir}/VacuumGripperCtrl.srv
   ${srv_dir}/SetTcpLoad.srv
   ${srv_dir}/SetModbusTimeout.srv
 

@@ -136,6 +136,8 @@ def launch_setup(context, *args, **kwargs):
     controllers = [
         '{}{}_traj_controller'.format(prefix_1.perform(context), xarm_type_1),
         '{}{}_traj_controller'.format(prefix_2.perform(context), xarm_type_2),
+        '{}{}_gripper_controller'.format(prefix_1.perform(context), xarm_type_1),
+        '{}{}_gripper_controller'.format(prefix_2.perform(context), xarm_type_2),
     ]
     
     #Consider using joint_state_broadcaster instead of joint_state_publisher for better performance

@@ -51,17 +51,13 @@ public:
 	int set_counter_reset();
 	int set_counter_increase();
 	int clean_gripper_error();
-	int clean_bio_gripper_error();
 	int start_record_trajectory();
 	int stop_record_trajectory();
 
 	// GetInt16
 	int get_state(int *state);
 	int get_cmdnum(int *cmdnum);
-	int get_vacuum_gripper(int *status);
 	int get_gripper_err_code(int *err);
-	int get_bio_gripper_status(int *status);
-	int get_bio_gripper_error(int *err);
 
 	//GetInt16List
 	int get_err_warn_code(std::vector<int>& err_warn);
@@ -74,7 +70,6 @@ public:
 	int set_gripper_mode(int mode);
 	int set_gripper_enable(bool enable);
 	int set_tgpio_modbus_timeout(int timeout);
-	int set_bio_gripper_speed(int speed);
 	int set_collision_rebound(bool on);
 	int set_fence_mode(bool on);
 	int set_reduced_mode(bool on);
@@ -176,54 +171,9 @@ public:
 	// SetAnalogIO
 	int set_cgpio_analog(int ionum, fp32 value);
 	int set_cgpio_analog_with_xyz(int ionum, fp32 value, const std::vector<fp32>& xyz, fp32 tol_r);
-
-	// VacuumGripperCtrl
-	int set_vacuum_gripper(bool on, bool wait = false, float timeout = 3, float delay_sec = 0);
 	
 	// GripperMove
 	int set_gripper_position(fp32 pos, bool wait = false, fp32 timeout = 10);
-
-	// BioGripperEnable
-	int set_bio_gripper_enable(bool enable, bool wait = true, fp32 timeout = 3);
-
-	// BioGripperCtrl
-	int open_bio_gripper(int speed = 0, bool wait = true, fp32 timeout = 5);
-	int open_bio_gripper(bool wait = true, fp32 timeout = 5);
-	int close_bio_gripper(int speed = 0, bool wait = true, fp32 timeout = 5);
-	int close_bio_gripper(bool wait = true, fp32 timeout = 5);
-
-	// RobotiqReset
-	int robotiq_reset();
-	// int robotiq_reset(std::vector<unsigned char>& ret_data);
-	
-	// RobotiqActivate
-	int robotiq_set_activate(bool wait = true, fp32 timeout = 3);
-	// int robotiq_set_activate(bool wait = true, fp32 timeout = 3, unsigned char ret_data[6] = NULL);
-	// int robotiq_set_activate(bool wait = true, unsigned char ret_data[6] = NULL);
-	// int robotiq_set_activate(unsigned char ret_data[6] = NULL);
-
-	// RobotiqMove
-	int robotiq_set_position(unsigned char pos, unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5);
-	int robotiq_set_position(unsigned char pos, bool wait = true, fp32 timeout = 5);
-	int robotiq_open(unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5);
-	int robotiq_open(bool wait = true, fp32 timeout = 5);
-	int robotiq_close(unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5);
-	int robotiq_close(bool wait = true, fp32 timeout = 5);
-	// int robotiq_set_position(unsigned char pos, unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_set_position(unsigned char pos, bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_set_position(unsigned char pos, bool wait = true, unsigned char ret_data[6] = NULL);
-	// int robotiq_set_position(unsigned char pos, unsigned char ret_data[6] = NULL);
-	// int robotiq_open(unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_open(bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_open(bool wait = true, unsigned char ret_data[6] = NULL);
-	// int robotiq_open(unsigned char ret_data[6] = NULL);
-	// int robotiq_close(unsigned char speed = 0xFF, unsigned char force = 0xFF, bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_close(bool wait = true, fp32 timeout = 5, unsigned char ret_data[6] = NULL);
-	// int robotiq_close(bool wait = true, unsigned char ret_data[6] = NULL);
-	// int robotiq_close(unsigned char ret_data[6] = NULL);
-
-	// RobotiqGetStatus
-	int robotiq_get_status(std::vector<unsigned char>& ret_data, unsigned char number_of_registers = 3);
 
 	// GetSetModbusData
 	int getset_tgpio_modbus_data(const std::vector<unsigned char>& modbus_data, int modbus_length, std::vector<unsigned char>& ret_data, int ret_length);
@@ -246,7 +196,6 @@ private:
 	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_set_counter_reset_;
 	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_set_counter_increase_;
 	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_clean_gripper_error_;
-	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_clean_bio_gripper_error_;
 	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_start_record_trajectory_;
 	rclcpp::Client<xarm_msgs::srv::Call>::SharedPtr client_stop_record_trajectory_;
 
@@ -255,10 +204,7 @@ private:
 	std::shared_ptr<xarm_msgs::srv::GetInt16::Response> res_get_int16_;
 	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_state_;
 	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_cmdnum_;
-	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_vacuum_gripper_;
 	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_gripper_err_code_;
-	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_bio_gripper_status_;
-	rclcpp::Client<xarm_msgs::srv::GetInt16>::SharedPtr client_get_bio_gripper_error_;
 	
 	// GetInt16List
 	std::shared_ptr<xarm_msgs::srv::GetInt16List::Request> req_get_int16_list_;
@@ -274,7 +220,6 @@ private:
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_gripper_mode_;
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_gripper_enable_;
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_tgpio_modbus_timeout_;
-	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_bio_gripper_speed_;
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_collision_rebound_;
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_fence_mode_;
 	rclcpp::Client<xarm_msgs::srv::SetInt16>::SharedPtr client_set_reduced_mode_;
@@ -394,42 +339,9 @@ private:
 	rclcpp::Client<xarm_msgs::srv::SetAnalogIO>::SharedPtr client_set_cgpio_analog_;
 	rclcpp::Client<xarm_msgs::srv::SetAnalogIO>::SharedPtr client_set_cgpio_analog_with_xyz_;
 
-	// VacuumGripperCtrl
-	std::shared_ptr<xarm_msgs::srv::VacuumGripperCtrl::Request> req_vacuum_gripper_ctrl_;
-	rclcpp::Client<xarm_msgs::srv::VacuumGripperCtrl>::SharedPtr client_set_vacuum_gripper_;
-
 	// GripperMove
 	std::shared_ptr<xarm_msgs::srv::GripperMove::Request> req_gripper_move_;
 	rclcpp::Client<xarm_msgs::srv::GripperMove>::SharedPtr client_set_gripper_position_;
-
-	// BioGripperEnable
-	std::shared_ptr<xarm_msgs::srv::BioGripperEnable::Request> req_bio_gripper_enable_;
-	rclcpp::Client<xarm_msgs::srv::BioGripperEnable>::SharedPtr client_set_bio_gripper_enable_;
-
-	// BioGripperCtrl
-	std::shared_ptr<xarm_msgs::srv::BioGripperCtrl::Request> req_bio_gripper_ctrl_;
-	rclcpp::Client<xarm_msgs::srv::BioGripperCtrl>::SharedPtr client_open_bio_gripper_;
-	rclcpp::Client<xarm_msgs::srv::BioGripperCtrl>::SharedPtr client_close_bio_gripper_;
-
-	// RobotiqReset
-	std::shared_ptr<xarm_msgs::srv::RobotiqReset::Request> req_robotiq_reset_;
-	std::shared_ptr<xarm_msgs::srv::RobotiqReset::Response> res_robotiq_reset_;
-	rclcpp::Client<xarm_msgs::srv::RobotiqReset>::SharedPtr client_robotiq_reset_;
-
-	// RobotiqActivate
-	std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Request> req_robotiq_activate_;
-	std::shared_ptr<xarm_msgs::srv::RobotiqActivate::Response> res_robotiq_activate_;
-	rclcpp::Client<xarm_msgs::srv::RobotiqActivate>::SharedPtr client_robotiq_set_activate_;
-
-	// RobotiqMove
-	std::shared_ptr<xarm_msgs::srv::RobotiqMove::Request> req_robotiq_move_;
-	std::shared_ptr<xarm_msgs::srv::RobotiqMove::Response> res_robotiq_move_;
-	rclcpp::Client<xarm_msgs::srv::RobotiqMove>::SharedPtr client_robotiq_set_position_;
-
-	// RobotiqGetStatus
-	std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Request> req_robotiq_get_status_;
-	std::shared_ptr<xarm_msgs::srv::RobotiqGetStatus::Response> res_robotiq_get_status_;
-	rclcpp::Client<xarm_msgs::srv::RobotiqGetStatus>::SharedPtr client_robotiq_get_status_;
 
 	// GetSetModbusData
 	std::shared_ptr<xarm_msgs::srv::GetSetModbusData::Request> req_getset_modbus_data_;

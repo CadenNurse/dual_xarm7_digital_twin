@@ -39,6 +39,7 @@ def launch_setup(context, *args, **kwargs):
     
     xarm_moveit_config_dir = get_package_share_directory('xarm_moveit_config')
 
+    
     dual_arm_ros2_controllers_path = os.path.join(
         xarm_moveit_config_dir,
         'config',
@@ -46,12 +47,13 @@ def launch_setup(context, *args, **kwargs):
         'ros2_controllers.yaml'
     )
 
-    dual_arm_moveit_controllers_path = os.path.join(
-        xarm_moveit_config_dir,
-        'config',
-        'dual_arm',
-        'moveit_controllers.yaml'
-    )
+    # only needed if you want to override the generated moveit_controllers.yaml with your own
+    # dual_arm_moveit_controllers_path = os.path.join(
+    #     xarm_moveit_config_dir,
+    #     'config',
+    #     'dual_arm',
+    #     'moveit_controllers.yaml'
+    # )
 
 
     moveit_config = DualMoveItConfigsBuilder(
@@ -87,7 +89,7 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
         parameters=[
             moveit_config.to_dict(),
-            moveit_controllers,
+            # moveit_controllers,
         ],
     )
 
@@ -156,8 +158,8 @@ def launch_setup(context, *args, **kwargs):
         'joint_state_broadcaster',
         '{}{}_traj_controller'.format(prefix_1.perform(context), xarm_type_1),
         '{}{}_traj_controller'.format(prefix_2.perform(context), xarm_type_2),
-        '{}xarm_gripper'.format(prefix_1.perform(context), xarm_type_1),
-        '{}xarm_gripper'.format(prefix_2.perform(context), xarm_type_2),
+        # '{}xarm_gripper'.format(prefix_1.perform(context), xarm_type_1),
+        # '{}xarm_gripper'.format(prefix_2.perform(context), xarm_type_2),
     ]    
     
     #Consider using joint_state_broadcaster instead of joint_state_publisher for better performance

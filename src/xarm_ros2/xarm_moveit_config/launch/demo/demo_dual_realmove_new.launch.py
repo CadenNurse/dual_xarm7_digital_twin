@@ -39,7 +39,7 @@ def launch_setup(context, *args, **kwargs):
     
     xarm_moveit_config_dir = get_package_share_directory('xarm_moveit_config')
 
-    
+
     dual_arm_ros2_controllers_path = os.path.join(
         xarm_moveit_config_dir,
         'config',
@@ -47,13 +47,12 @@ def launch_setup(context, *args, **kwargs):
         'ros2_controllers.yaml'
     )
 
-    # only needed if you want to override the generated moveit_controllers.yaml with your own
-    # dual_arm_moveit_controllers_path = os.path.join(
-    #     xarm_moveit_config_dir,
-    #     'config',
-    #     'dual_arm',
-    #     'moveit_controllers.yaml'
-    # )
+    dual_arm_moveit_controllers_path = os.path.join(
+        xarm_moveit_config_dir,
+        'config',
+        'dual_arm',
+        'moveit_controllers.yaml'
+    )
 
 
     moveit_config = DualMoveItConfigsBuilder(

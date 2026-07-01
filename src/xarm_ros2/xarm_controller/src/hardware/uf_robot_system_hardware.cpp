@@ -72,7 +72,7 @@ namespace uf_robot_hardware
 
         std::thread th([this]() -> void {
             rclcpp::spin(node_);
-            rclcpp::shutdown();
+            // rclcpp::shutdown(); removed from detached spin thread, as it will shutdown the whole process and not just the node
         });
         th.detach();
 
@@ -348,15 +348,17 @@ namespace uf_robot_hardware
     {
         if (_need_reset()) {
             initialized_ = false;
-            _deactivate_controller();
+            // _deactivate_controller();
             return hardware_interface::return_type::OK;
         }
         initialized_ = true;
-        if(reactivate_controller_later_)
-        {
-            _activate_controller();
-            reactivate_controller_later_ = false;
-        }
+        // changed the below
+        // if(reactivate_controller_later_)
+        // {
+        //     _activate_controller();
+        //     reactivate_controller_later_ = false;
+        // }
+
         // std::string pos_str = "[ ";
         // std::string vel_str = "[ ";
         // for (int i = 0; i < position_cmds_.size(); i++) { 
@@ -371,7 +373,7 @@ namespace uf_robot_hardware
 
         int cmd_ret = 0;
         if (velocity_control_) {
-            for (int i = 0; i < velocity_cmds_.size(); i++) { 
+            for (int i = 0; i < 7; i++) { 
                 cmds_float_[i] = (float)velocity_cmds_[i];
             }
             // RCLCPP_INFO(LOGGER, "[%s] velocity: %s", robot_ip_.c_str(), vel_str.c_str());
@@ -381,7 +383,7 @@ namespace uf_robot_hardware
             }
         }
         else {
-            for (int i = 0; i < position_cmds_.size(); i++) { 
+            for (int i = 0; i < 7; i++) { 
                 cmds_float_[i] = (float)position_cmds_[i];
             }
             curr_write_time_ = node_->get_clock()->now();
@@ -517,10 +519,11 @@ namespace uf_robot_hardware
             // int ret = xarm_driver_.arm->set_state(XARM_STATE::STOP);
             // RCLCPP_ERROR(LOGGER, "[%s] Write() failed, failed_ret=%d !, Setting Robot State to STOP... (ret: %d)", robot_ip_.c_str(), write_code_, ret);
             RCLCPP_ERROR(LOGGER, "[%s] Write() failed, failed_ret=%d !", robot_ip_.c_str(), write_code_);
+            // changed the below
             if (write_code_ == SERVICE_IS_PERSISTENT_BUT_INVALID || write_code_ == SERVICE_CALL_FAILED) {
-                RCLCPP_ERROR(LOGGER, "[%s] Service is invaild, ros shutdown", robot_ip_.c_str());
-                rclcpp::shutdown();
-                exit(1);
+                RCLCPP_ERROR(LOGGER, "[%s] Service error detected in hardware path, skipping cycle", robot_ip_.c_str());
+                write_code_ = 0;
+                return true;
             }
             else if (write_code_ == ROBOT_IS_DISCONNECTED) {
                 RCLCPP_ERROR(LOGGER, "[%s] Robot is disconnected, ros shutdown", robot_ip_.c_str());

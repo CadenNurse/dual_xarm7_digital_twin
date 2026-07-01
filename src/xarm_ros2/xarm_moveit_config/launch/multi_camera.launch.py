@@ -80,16 +80,16 @@ def generate_launch_description():
             'enable_colored_point_cloud': 'true',
             'depth_registration': 'true',
             'enable_depth': 'true',
-            # 'depth_width': '640',
-            # 'depth_height': '576',
-            # 'depth_format': 'Y16',
-            # 'depth_fps': '15',
+            'depth_width': '640',
+            'depth_height': '576',
+            'depth_format': 'Y16',
+            'depth_fps': '30',
             'enable_color': 'true',
-            # 'color_width': '1920',
-            # 'color_height': '1080',
-            # 'color_format': 'MJPG',
-            # 'color_fps': '15',
-            #'enable_frame_sync': 'true',
+            'color_width': '1920',
+            'color_height': '1080',
+            'color_format': 'MJPG',
+            'color_fps': '30',
+            'enable_frame_sync': 'true',
                 # QoS for all streams
             'color_qos':            'SENSOR_DATA',
             'depth_qos':            'SENSOR_DATA',
@@ -108,9 +108,9 @@ def generate_launch_description():
 
     # Launch description
     ld = LaunchDescription([
-        GroupAction([right_camera]),
+        #GroupAction([right_camera]),
         #GroupAction([left_camera]),
-        #GroupAction([global_camera]),
+        GroupAction([global_camera]),
     ])
 
     return ld

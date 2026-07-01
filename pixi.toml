@@ -9,11 +9,13 @@ scripts = ["install/setup.bash"]
 
 [activation.env]
 LD_PRELOAD = "/usr/lib/x86_64-linux-gnu/libGL.so.1"
+RMW_IMPLEMENTATION = "rmw_fastrtps_cpp"
+FASTDDS_BUILTIN_TRANSPORTS = "UDPv4"
+# FASTDDS_DEFAULT_PROFILES_FILE = "/xarm_ws/config/fastrtps_udp.xml"
 __NV_PRIME_RENDER_OFFLOAD = "1"
 __NV_PRIME_RENDER_OFFLOAD_PROVIDER = "NVIDIA-G0"
 __GLX_VENDOR_LIBRARY_NAME = "nvidia"
 __VK_LAYER_NV_optimus = "NVIDIA_only"
-RMW_IMPLEMENTATION = "rmw_fastrtps_cpp"
 ROS_DOMAIN_ID = "37"
 
 
@@ -21,7 +23,9 @@ ROS_DOMAIN_ID = "37"
 build = "colcon build"
 clean = "rm -rf build/ install/ log/"
 view_frames = "ros2 run tf2_tools view_frames"
-launch_process = "ros2 launch xarm_moveit_config dual_xarm7_moveit_realmove.launch.py"
+launch_moveit = "ros2 launch xarm_moveit_config dual_xarm7_moveit_realmove.launch.py"
+apriltag_launch = "ros2 launch apriltag_ros apriltag_femto_std.launch.py"
+workspace_origin_broadcaster = "python3 workspace_origin_broadcaster.py"
 
 [dependencies]
 #Core ROS2 packages

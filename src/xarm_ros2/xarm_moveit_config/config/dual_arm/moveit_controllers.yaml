@@ -4,8 +4,8 @@ moveit_simple_controller_manager:
   controller_names:
     - L_xarm7_traj_controller
     - R_xarm7_traj_controller
-    # - L_xarm_gripper
-    # - R_xarm_gripper
+    - L_xarm_gripper
+    - R_xarm_gripper
     
   L_xarm7_traj_controller:
     action_ns: follow_joint_trajectory
@@ -33,14 +33,14 @@ moveit_simple_controller_manager:
       - R_joint6
       - R_joint7
 
-  # L_xarm_gripper:
-  #   action_ns: gripper_action
-  #   type: GripperCommand
-  #   default: true
-  #   joint: L_drive_joint
+  L_xarm_gripper:
+    action_ns: gripper_action
+    type: GripperCommand
+    default: true
+    joint: L_drive_joint
 
-  # R_xarm_gripper:
-  #   action_ns: gripper_action
-  #   type: GripperCommand
-  #   default: true
-  #   joint: R_drive_joint
+  R_xarm_gripper:
+    action_ns: gripper_action
+    type: GripperCommand
+    default: true
+    joint: R_drive_joint

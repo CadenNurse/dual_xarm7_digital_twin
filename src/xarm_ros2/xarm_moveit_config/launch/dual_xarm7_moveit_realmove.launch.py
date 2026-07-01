@@ -68,23 +68,8 @@ def generate_launch_description():
         )
     )
 
-    # apriltag_node = Node(
-    #     package='apriltag_ros',
-    #     executable='tag_detector',
-    #     name='apriltag',
-    #     output='screen',
-    #     remappings=[
-    #         ('image', '/G_camera/color/image_raw'),
-    #         ('camera_info', '/G_camera/color/camera_info'),
-    #     ],
-    #     parameters=[
-    #         os.path.join(apriltag_ros_dir, 'cfg', 'femto_tags.yaml')
-    #     ],
-    # )
-
     return LaunchDescription([
         dual_xarm,
         cameras,
         wall_node,
-        #apriltag_node,
     ])

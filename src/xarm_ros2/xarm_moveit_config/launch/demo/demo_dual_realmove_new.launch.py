@@ -78,8 +78,8 @@ def launch_setup(context, *args, **kwargs):
     ).to_moveit_configs()
 
     # load personallized controllers overtop of generated ones in moveit_config.to_dict()
-    with open(dual_arm_moveit_controllers_path, "r") as f:
-        moveit_controllers = yaml.safe_load(f)
+    # with open(dual_arm_moveit_controllers_path, "r") as f:
+    #     moveit_controllers = yaml.safe_load(f)
 
     # Start the actual move_group node/action server
     move_group_node = Node(
@@ -103,21 +103,6 @@ def launch_setup(context, *args, **kwargs):
         parameters=[
             moveit_config.to_dict(),
         ],
-    )
-
-    static_tf_1 = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', '{}link_base'.format(prefix_1.perform(context))],
-    )
-    static_tf_2 = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', '{}link_base'.format(prefix_2.perform(context))],
     )
 
     # Publish TF
@@ -148,11 +133,6 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
     )
 
-    # no need to remap the same as joint state publisher
-    # remappings = [
-    #     ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_1.perform(context), xarm_type_1)),
-    #     ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix_2.perform(context), xarm_type_2)),            
-    # ]
     controllers = [
         'joint_state_broadcaster',
         '{}{}_traj_controller'.format(prefix_1.perform(context), xarm_type_1),
@@ -173,7 +153,6 @@ def launch_setup(context, *args, **kwargs):
                 '{}{}/joint_states'.format(prefix_2.perform(context), hw_ns.perform(context))
             ], 
         }],
-        #remappings=remappings, # removed as remapping was removed above
     )
 
     controller_nodes = []
@@ -193,8 +172,6 @@ def launch_setup(context, *args, **kwargs):
         robot_state_publisher,
         joint_state_publisher_node,
         move_group_node,
-        #static_tf_1,
-        #static_tf_2,
         ros2_control_node,
         rviz_node,
     ] + controller_nodes

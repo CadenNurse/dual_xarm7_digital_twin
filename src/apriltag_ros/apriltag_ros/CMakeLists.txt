@@ -5,8 +5,10 @@ project(apriltag_ros)
 set(CMAKE_CXX_STANDARD 14)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -68,6 +70,10 @@ install(TARGETS tag_detector
     RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  workspace_origin_broadcaster.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY cfg/ DESTINATION share/${PROJECT_NAME}/cfg)
 

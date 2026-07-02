@@ -5,3 +5,4 @@ build/
 install/
 log/
 Log/
+src/moveit_task_constructor/

@@ -3,7 +3,7 @@ execute_laptop_task_server:
     world_frame: world
     object_frame_hint: object_nominal
     arm_group: L_xarm7
-    eef_frame: L_xarm_gripper
+    eef_frame: L_link_tcp
 
     laptop_width: 0.320
     laptop_depth: 0.220

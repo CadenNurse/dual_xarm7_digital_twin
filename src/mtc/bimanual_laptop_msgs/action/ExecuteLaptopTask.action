@@ -2,7 +2,7 @@ string task_name
 bool use_bimanual
 float64 lid_angle_goal_deg
 string world_frame
-string laptop_frame_hint
+string object_frame_hint
 ---
 bool success
 string message

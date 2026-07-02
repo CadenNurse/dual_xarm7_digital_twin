@@ -174,7 +174,7 @@ except Exception as e:
         # A dictionary that has the planning scene monitor's parameters.
         planning_scene_monitor = {}
         # A dictionary that has the sensor 3d configuration parameters.
-        sensors_3d = {}
+        # sensors_3d = {}
         # A dictionary containing move_group's non-default capabilities.
         move_group_capabilities = {}
         # A dictionary containing the overridden position/velocity/acceleration limits.
@@ -192,7 +192,7 @@ except Exception as e:
             parameters.update(self.planning_pipelines)
             parameters.update(self.trajectory_execution)
             parameters.update(self.planning_scene_monitor)
-            parameters.update(self.sensors_3d)
+            # parameters.update(self.sensors_3d)
             parameters.update(self.joint_limits)
             parameters.update(self.moveit_cpp)
             # Update robot_description_planning with pilz cartesian limits
@@ -604,28 +604,28 @@ class MoveItConfigsBuilder(ParameterBuilder):
         }
         return self
 
-    def sensors_3d(self, file_path = None):
-        """Load sensors_3d parameters.
+    # def sensors_3d(self, file_path = None):
+    #     """Load sensors_3d parameters.
 
-        :param file_path: Absolute or relative path to the sensors_3d yaml file (w.r.t. xarm_moveit_config).
-        :return: Instance of MoveItConfigsBuilder with robot_description_planning loaded.
-        """
-        params = [self.__robot_type, self.__robot_dof]
-        if all(isinstance(value, str) for value in params):
-            robot_name = '{}{}'.format(self.__robot_type, self.__robot_dof if self.__robot_type == 'xarm' else '6' if self.__robot_type == 'lite' else '')
+    #     :param file_path: Absolute or relative path to the sensors_3d yaml file (w.r.t. xarm_moveit_config).
+    #     :return: Instance of MoveItConfigsBuilder with robot_description_planning loaded.
+    #     """
+    #     params = [self.__robot_type, self.__robot_dof]
+    #     if all(isinstance(value, str) for value in params):
+    #         robot_name = '{}{}'.format(self.__robot_type, self.__robot_dof if self.__robot_type == 'xarm' else '6' if self.__robot_type == 'lite' else '')
             
-            if file_path is None:
-                file_path = self._package_path / 'config' / robot_name / 'sensors_3d.yaml'
-            else:
-                file_path = self._package_path / file_path
-            if file_path and file_path.exists():
-                sensors_data = load_yaml(file_path)
-                # TODO(mikeferguson): remove the second part of this check once
-                # https://github.com/ros-planning/moveit_resources/pull/141 has made through buildfarm
-                if sensors_data and len(sensors_data['sensors']) > 0 and sensors_data['sensors'][0]:
-                    self.__moveit_configs.sensors_3d = sensors_data
+    #         if file_path is None:
+    #             file_path = self._package_path / 'config' / robot_name / 'sensors_3d.yaml'
+    #         else:
+    #             file_path = self._package_path / file_path
+    #         if file_path and file_path.exists():
+    #             sensors_data = load_yaml(file_path)
+    #             # TODO(mikeferguson): remove the second part of this check once
+    #             # https://github.com/ros-planning/moveit_resources/pull/141 has made through buildfarm
+    #             if sensors_data and len(sensors_data['sensors']) > 0 and sensors_data['sensors'][0]:
+    #                 self.__moveit_configs.sensors_3d = sensors_data
         
-        return self
+        # return self
 
     def planning_pipelines(
         self,
@@ -805,8 +805,8 @@ class MoveItConfigsBuilder(ParameterBuilder):
             self.trajectory_execution()
         if not self.__moveit_configs.planning_scene_monitor:
             self.planning_scene_monitor()
-        if not self.__moveit_configs.sensors_3d:
-            self.sensors_3d()
+        # if not self.__moveit_configs.sensors_3d:
+        #     self.sensors_3d()
         if not self.__moveit_configs.joint_limits:
             self.joint_limits()
         # TODO(JafarAbdi): We should have a default moveit_cpp.yaml as port of a moveit config package
@@ -1407,39 +1407,39 @@ class DualMoveItConfigsBuilder(ParameterBuilder):
         }
         return self
 
-    def sensors_3d(self, file_path = None):
-        """Load sensors_3d parameters.
+    # def sensors_3d(self, file_path = None):
+    #     """Load sensors_3d parameters.
 
-        :param file_path: Absolute or relative path to the sensors_3d yaml file (w.r.t. xarm_moveit_config).
-        :return: Instance of MoveItConfigsBuilder with robot_description_planning loaded.
-        """
-        params = [self.__robot_type_1, self.__robot_type_2, self.__robot_dof_1, self.__robot_dof_2]
-        if all(isinstance(value, str) for value in params):
-            robot_name_1 = '{}{}'.format(self.__robot_type_1, self.__robot_dof_1 if self.__robot_type_1 == 'xarm' else '6' if self.__robot_type_1 == 'lite' else '')
-            robot_name_2 = '{}{}'.format(self.__robot_type_2, self.__robot_dof_2 if self.__robot_type_2 == 'xarm' else '6' if self.__robot_type_2 == 'lite' else '')
+    #     :param file_path: Absolute or relative path to the sensors_3d yaml file (w.r.t. xarm_moveit_config).
+    #     :return: Instance of MoveItConfigsBuilder with robot_description_planning loaded.
+    #     """
+    #     params = [self.__robot_type_1, self.__robot_type_2, self.__robot_dof_1, self.__robot_dof_2]
+    #     if all(isinstance(value, str) for value in params):
+    #         robot_name_1 = '{}{}'.format(self.__robot_type_1, self.__robot_dof_1 if self.__robot_type_1 == 'xarm' else '6' if self.__robot_type_1 == 'lite' else '')
+    #         robot_name_2 = '{}{}'.format(self.__robot_type_2, self.__robot_dof_2 if self.__robot_type_2 == 'xarm' else '6' if self.__robot_type_2 == 'lite' else '')
             
-            if file_path is None:
-                file_path_1 = self._package_path / 'config' / robot_name_1 / 'sensors_3d.yaml'
-                file_path_2 = self._package_path / 'config' / robot_name_2 / 'sensors_3d.yaml'
-                sensors_data = {}
-                if file_path_1.exists():
-                    sensors_data_1 = load_yaml(file_path_1)
-                    sensors_data_1 = sensors_data_1 if sensors_data_1 else {}
-                    sensors_data.update(sensors_data_1)
-                if file_path_2.exists():
-                    sensors_data_2 = load_yaml(file_path_2)
-                    sensors_data_2 = sensors_data_2 if sensors_data_2 else {}
-                    sensors_data.update(sensors_data_2)
-            else:
-                file_path = self._package_path / file_path
-                sensors_data = load_yaml(file_path) if file_path and file_path.exists() else {}
+    #         if file_path is None:
+    #             file_path_1 = self._package_path / 'config' / robot_name_1 / 'sensors_3d.yaml'
+    #             file_path_2 = self._package_path / 'config' / robot_name_2 / 'sensors_3d.yaml'
+    #             sensors_data = {}
+    #             if file_path_1.exists():
+    #                 sensors_data_1 = load_yaml(file_path_1)
+    #                 sensors_data_1 = sensors_data_1 if sensors_data_1 else {}
+    #                 sensors_data.update(sensors_data_1)
+    #             if file_path_2.exists():
+    #                 sensors_data_2 = load_yaml(file_path_2)
+    #                 sensors_data_2 = sensors_data_2 if sensors_data_2 else {}
+    #                 sensors_data.update(sensors_data_2)
+    #         else:
+    #             file_path = self._package_path / file_path
+    #             sensors_data = load_yaml(file_path) if file_path and file_path.exists() else {}
 
-            # TODO(mikeferguson): remove the second part of this check once
-            # https://github.com/ros-planning/moveit_resources/pull/141 has made through buildfarm
-            if sensors_data and len(sensors_data['sensors']) > 0 and sensors_data['sensors'][0]:
-                self.__moveit_configs.sensors_3d = sensors_data
+    #         # TODO(mikeferguson): remove the second part of this check once
+    #         # https://github.com/ros-planning/moveit_resources/pull/141 has made through buildfarm
+    #         if sensors_data and len(sensors_data['sensors']) > 0 and sensors_data['sensors'][0]:
+    #             self.__moveit_configs.sensors_3d = sensors_data
         
-        return self
+    #     return self
 
     def planning_pipelines(
         self,
@@ -1666,8 +1666,8 @@ class DualMoveItConfigsBuilder(ParameterBuilder):
             self.trajectory_execution()
         if not self.__moveit_configs.planning_scene_monitor:
             self.planning_scene_monitor()
-        if not self.__moveit_configs.sensors_3d:
-            self.sensors_3d()
+        # if not self.__moveit_configs.sensors_3d:
+        #     self.sensors_3d()
         if not self.__moveit_configs.joint_limits:
             self.joint_limits()
         # TODO(JafarAbdi): We should have a default moveit_cpp.yaml as port of a moveit config package

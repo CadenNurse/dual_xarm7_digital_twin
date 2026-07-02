@@ -18,12 +18,17 @@ __GLX_VENDOR_LIBRARY_NAME = "nvidia"
 __VK_LAYER_NV_optimus = "NVIDIA_only"
 ROS_DOMAIN_ID = "37"
 
+# [feature.test.dependencies]
+# pytest = "*"
+
+# [environments]
+# default = ["test"]
 
 [tasks]
 build = "colcon build"
 clean = "rm -rf build/ install/ log/"
 view_frames = "ros2 run tf2_tools view_frames"
-launch_moveit = "ros2 launch xarm_moveit_config dual_xarm7_moveit_realmove.launch.py"
+launch_arms = "ros2 launch xarm_moveit_config dual_xarm7_moveit_realmove.launch.py"
 apriltag_launch = "ros2 launch apriltag_ros apriltag_femto_std.launch.py"
 workspace_origin_broadcaster = "python3 workspace_origin_broadcaster.py"
 
@@ -33,6 +38,8 @@ run_close = "ros2 action send_goal /execute_laptop_task bimanual_laptop_msgs/act
 
 [dependencies]
 #Core ROS2 packages
+setuptools = "*"
+wheel = "*"
 python = ">=3.12.13,<3.13"
 ros-jazzy-desktop = ">=0.11.0,<0.12"
 ros-jazzy-rmw-implementation = ">=2.15.6,<3"
@@ -111,3 +118,4 @@ ros-jazzy-rclcpp-action = ">=28.1.18,<29"
 ros-jazzy-action-msgs = ">=2.0.3,<3"
 ros-jazzy-launch = ">=3.4.10,<4"
 ros-jazzy-launch-ros = ">=0.26.11,<0.27"
+ros-jazzy-tf-transformations = ">=1.1.1,<2"

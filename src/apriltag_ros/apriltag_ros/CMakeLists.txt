@@ -71,7 +71,8 @@ install(TARGETS tag_detector
 )
 
 install(PROGRAMS
-  workspace_origin_broadcaster.py
+  nodes/workspace_origin_broadcaster.py
+  nodes/object_nominal_broadcaster.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

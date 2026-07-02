@@ -1,7 +1,7 @@
 execute_laptop_task_server:
   ros__parameters:
     world_frame: world
-    laptop_frame_hint: laptop_nominal
+    object_frame_hint: object_nominal
     arm_group: L_xarm7
     eef_frame: L_xarm_gripper
 

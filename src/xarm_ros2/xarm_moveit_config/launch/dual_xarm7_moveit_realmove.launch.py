@@ -68,8 +68,15 @@ def generate_launch_description():
         )
     )
 
+    apriltag_ros = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(apriltag_ros_dir, 'launch', 'apriltag_femto_std.launch.py')
+        )
+    )
+
     return LaunchDescription([
         dual_xarm,
         cameras,
         wall_node,
+        apriltag_ros,
     ])

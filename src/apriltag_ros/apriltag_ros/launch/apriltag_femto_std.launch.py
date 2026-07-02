@@ -38,9 +38,27 @@ def generate_launch_description():
         }],
     )
 
+    object_nominal_node = Node(
+        package='apriltag_ros',
+        executable='object_nominal_broadcaster.py',
+        name='object_nominal_broadcaster',
+        output='screen',
+        parameters=[{
+            'detections_topic': '/apriltag_detections',
+            'target_tag_id': 21,
+            'tag_frame_prefix': 'tag_',
+            'object_frame': 'object_nominal',
+            'offset_xyz': [0.0, 0.0, 0.12],
+            'offset_rpy': [0.0, 0.0, 0.0],
+        }],
+    )
+
+    # for every new tag, update: femto_tags.yaml and the object broadcaster python file (see object_nominal_broadcaster.py for example)
+
     return LaunchDescription([
         apriltag_node,
-        workspace_origin_node
+        workspace_origin_node,
+        object_nominal_node,
     ])
 
 # launch using:

@@ -1,0 +1,12 @@
+string task_name
+bool use_bimanual
+float64 lid_angle_goal_deg
+string world_frame
+string laptop_frame_hint
+---
+bool success
+string message
+float64 final_lid_angle_deg
+---
+string current_state
+float64 estimated_lid_angle_deg

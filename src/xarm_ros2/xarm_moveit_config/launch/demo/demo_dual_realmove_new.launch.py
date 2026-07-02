@@ -156,18 +156,18 @@ def launch_setup(context, *args, **kwargs):
         }],
     )
 
-    execute_laptop_task_server = Node(
-        package='bimanual_laptop_mtc',
-        executable='/home/cadennurse/mtc/src/bimanual_laptop_mtc/launch/execute_laptop_task_server.py',
-        name='execute_laptop_task_server',
-        output='screen',
-        parameters=[
-            moveit_config.to_dict(),
-            {
-                'use_sim_time': False,
-            },
-        ],
-    )
+    # execute_laptop_task_server = Node(
+    #     package='bimanual_laptop_mtc',
+    #     executable='/home/cadennurse/mtc/src/bimanual_laptop_mtc/launch/execute_laptop_task_server.py',
+    #     name='execute_laptop_task_server',
+    #     output='screen',
+    #     parameters=[
+    #         moveit_config.to_dict(),
+    #         {
+    #             'use_sim_time': False,
+    #         },
+    #     ],
+    # )
 
     controller_nodes = []
     for controller in controllers:
@@ -188,7 +188,7 @@ def launch_setup(context, *args, **kwargs):
         move_group_node,
         ros2_control_node,
         rviz_node,
-        execute_laptop_task_server,
+        # execute_laptop_task_server,
     ] + controller_nodes
 
 

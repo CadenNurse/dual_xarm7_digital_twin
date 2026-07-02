@@ -1,0 +1,28 @@
+execute_laptop_task_server:
+  ros__parameters:
+    world_frame: world
+    laptop_frame_hint: laptop_nominal
+    arm_group: L_xarm7
+    eef_frame: L_xarm_gripper
+
+    laptop_width: 0.320
+    laptop_depth: 0.220
+    laptop_thickness_base: 0.018
+    laptop_thickness_lid: 0.008
+    laptop_hinge_offset_x: -0.140
+
+    lid_angle_start_deg: 70.0
+    lid_angle_goal_default_deg: 60.0
+
+    pregrasp_offset_x: 0.000
+    pregrasp_offset_y: 0.000
+    pregrasp_offset_z: 0.10
+
+    step_translation_m: 0.002
+    step_count: 2
+    retreat_distance_m: 0.08
+
+    table_size_x: 1.20
+    table_size_y: 0.80
+    table_size_z: 0.04
+    table_pose_z: -0.02

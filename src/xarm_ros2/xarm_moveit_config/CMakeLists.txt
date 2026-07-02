@@ -34,6 +34,7 @@ endif()
 
 install(DIRECTORY
   config
+  dual_config
   rviz
   srdf
   launch

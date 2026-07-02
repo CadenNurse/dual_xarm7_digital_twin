@@ -17,8 +17,8 @@ class SceneObjectAdder(Node):
         # Original 4 upright posts: 3 cm x 3 cm x 1 m
         self.declare_parameter('post_size', [0.03, 0.03, 1.0])
 
-        self.declare_parameter('post_1_position', [-0.19, -0.292, 0.5])
-        self.declare_parameter('post_2_position', [-0.19,  0.875, 0.5])
+        self.declare_parameter('post_1_position', [-0.16, -0.292, 0.5])
+        self.declare_parameter('post_2_position', [-0.16,  0.875, 0.5])
         self.declare_parameter('post_3_position', [ 0.61, -0.292, 0.5])
         self.declare_parameter('post_4_position', [ 0.61,  0.875, 0.5])
 
@@ -32,7 +32,7 @@ class SceneObjectAdder(Node):
         self.declare_parameter('x_box_3_position', [0.21,  0.875, .985])
 
         # 2 long in Y
-        self.declare_parameter('y_box_1_position', [-0.19, 0.2915, .985])
+        self.declare_parameter('y_box_1_position', [-0.16, 0.2915, .985])
         self.declare_parameter('y_box_2_position', [ 0.61, 0.2915, .985])
 
         # Medium gray, alpha 0.8

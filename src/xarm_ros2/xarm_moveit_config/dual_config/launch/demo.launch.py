@@ -54,6 +54,7 @@ def launch_setup(context, *args, **kwargs):
         'moveit_controllers.yaml'
     )
 
+
     moveit_config = DualMoveItConfigsBuilder(
         context=context,
         controllers_name='controllers',
@@ -87,6 +88,8 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
         parameters=[
             moveit_config.to_dict(),
+
+            # moveit_controllers,
         ],
     )
 
@@ -153,6 +156,15 @@ def launch_setup(context, *args, **kwargs):
         }],
     )
 
+    # pick_place_demo = Node(
+    #     package="mtc_tutorial",
+    #     executable="mtc_node",
+    #     output="screen",
+    #     parameters=[
+    #         moveit_config.to_dict(),
+    #     ],
+    # )
+    
     controller_nodes = []
     for controller in controllers:
         controller_nodes.append(Node(
@@ -172,6 +184,7 @@ def launch_setup(context, *args, **kwargs):
         move_group_node,
         ros2_control_node,
         rviz_node,
+        # pick_place_demo,
     ] + controller_nodes
 
 

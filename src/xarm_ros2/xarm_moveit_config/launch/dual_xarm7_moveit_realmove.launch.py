@@ -26,7 +26,7 @@ def generate_launch_description():
                 xarm_moveit_config_dir,
                 'launch',
                 'demo',
-                'demo_dual_realmove_new.launch.py'
+                'demo_dual_test1.launch.py' # change to the launch file you want to use for the dual xarm demo
             )
         ),
         launch_arguments={

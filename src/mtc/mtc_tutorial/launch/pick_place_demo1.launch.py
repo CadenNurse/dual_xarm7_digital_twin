@@ -48,11 +48,8 @@ def generate_launch_description():
     gripper_joint_limits = load_yaml(
         "xarm_moveit_config", "dual_config/config/xarm_gripper_joint_limits.yaml"
     )
-    xarm_ompl = load_yaml(
-        "xarm_moveit_config", "dual_config/config/xarm7_ompl_planning.yaml"
-    )
-    gripper_ompl = load_yaml(
-        "xarm_moveit_config", "dual_config/config/gripper_ompl_planning.yaml"
+    ompl_main = load_yaml(
+        "xarm_moveit_config", "dual_config/config/ompl_main.yaml"
     )
     moveit_ctrls = load_yaml(
         "xarm_moveit_config", "dual_config/config/moveit_controllers.yaml"
@@ -79,7 +76,7 @@ def generate_launch_description():
     moveit_params["ompl"]["planning_plugins"] = ["ompl_interface/OMPLPlanner"]
     moveit_params["ompl"]["request_adapters"] = [
         "default_planning_request_adapters/ResolveConstraintFrames",
-        "default_planning_request_adapters/ValidateWorkspaceBounds",
+        "default_planning_request_adapters/ValidateWorkspaceBounds", # remove to reduce noise in terminal
         "default_planning_request_adapters/CheckStartStateBounds",
         "default_planning_request_adapters/CheckStartStateCollision",
     ]
@@ -89,13 +86,13 @@ def generate_launch_description():
         "default_planning_response_adapters/DisplayMotionPath",
     ]
     moveit_params["ompl"]["start_state_max_bounds_error"] = 0.1
-    merge_dict(moveit_params["ompl"], xarm_ompl)
-    merge_dict(moveit_params["ompl"], gripper_ompl)
+    merge_dict(moveit_params["ompl"], ompl_main)
 
     pick_place_demo = Node(
         package="mtc_tutorial",
-        executable="mtc_node_cntrl",
+        executable="mtc_node_pp",
         output="screen",
+        arguments=['--ros-args', '--log-level', 'warn'],
         parameters=[moveit_params],
     )
 

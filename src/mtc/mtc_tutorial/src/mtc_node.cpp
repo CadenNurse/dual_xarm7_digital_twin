@@ -199,7 +199,7 @@ mtc::Task MTCTaskNode::createTask()
                             Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY()) *
                             Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
       grasp_frame_transform.linear() = q.matrix();
-      grasp_frame_transform.translation().z() = 0.05;
+      grasp_frame_transform.translation().z() = 0.05; // offset from the object
 
       // Compute IK
       auto wrapper =
@@ -259,6 +259,103 @@ mtc::Task MTCTaskNode::createTask()
 
     task.add(std::move(grasp)); // add the serial container and all of its substages to the task
    }
+
+   {
+    // connect stage to bring together the pick and place tasks
+    auto stage_move_to_place = std::make_unique<mtc::stages::Connect>(
+        "move to place",
+        mtc::stages::Connect::GroupPlannerVector{ { arm_group_name, sampling_planner },
+                                                  { hand_group_name, interpolation_planner } });
+    stage_move_to_place->setTimeout(5.0);
+    stage_move_to_place->properties().configureInitFrom(mtc::Stage::PARENT);
+    task.add(std::move(stage_move_to_place));
+  }
+  
+  {
+    // form a serial container to place the stages in
+    auto place = std::make_unique<mtc::SerialContainer>("place object");
+    task.properties().exposeTo(place->properties(), { "eef", "group", "ik_frame" });
+    place->properties().configureInitFrom(mtc::Stage::PARENT,
+                                          { "eef", "group", "ik_frame" });
+
+    { //generates the poses to place the object and computes the IK for them
+      // Sample place pose
+      auto stage = std::make_unique<mtc::stages::GeneratePlacePose>("generate place pose");
+      stage->properties().configureInitFrom(mtc::Stage::PARENT);
+      stage->properties().set("marker_ns", "place_pose");
+      stage->setObject("object");
+
+      geometry_msgs::msg::PoseStamped target_pose_msg; // determine where to place the object using PoseStamped
+      target_pose_msg.header.frame_id = "object";
+      target_pose_msg.pose.position.y = 0.5;
+      target_pose_msg.pose.orientation.w = 1.0;
+      stage->setPose(target_pose_msg); // pass target pose to the stage 
+      stage->setMonitoredStage(attach_object_stage);  // Hook into attach_object_stage
+
+      // Compute IK
+      auto wrapper =
+          std::make_unique<mtc::stages::ComputeIK>("place pose IK", std::move(stage)); // compute and hand-off to generator stage
+      wrapper->setMaxIKSolutions(2); // same logic as the pick stages...
+      wrapper->setMinSolutionDistance(1.0);
+      wrapper->setIKFrame("object");
+      wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
+      wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, { "target_pose" });
+      place->insert(std::move(wrapper));
+    }
+
+    {
+      // open the hand using a MoveTo stage and joint interpolation planner
+      auto stage = std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
+      stage->setGroup(hand_group_name);
+      stage->setGoal("open");
+      place->insert(std::move(stage));
+    }
+
+    {
+      // re-enable collison with the object using a ModifyPlanningScene stage almost same as enabling collision
+      auto stage =
+          std::make_unique<mtc::stages::ModifyPlanningScene>("forbid collision (hand,object)");
+      stage->allowCollisions("object",
+                            task.getRobotModel()
+                                ->getJointModelGroup(hand_group_name)
+                                ->getLinkModelNamesWithCollisionGeometry(),
+                            false); // false instead of true forbids collision
+      place->insert(std::move(stage));
+    }
+
+    {
+      // detach the object using same concept as above
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("detach object");
+      stage->detachObject("object", hand_frame);
+      place->insert(std::move(stage));
+    }
+
+    {
+      // retreat from object using a MoveRelative stage, similar to approach and lift object stages
+      auto stage = std::make_unique<mtc::stages::MoveRelative>("retreat", cartesian_planner);
+      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+      stage->setMinMaxDistance(0.1, 0.3);
+      stage->setIKFrame(hand_frame);
+      stage->properties().set("marker_ns", "retreat");
+
+      // Set retreat direction
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = "world";
+      vec.vector.x = -0.5;
+      stage->setDirection(vec);
+      place->insert(std::move(stage));
+    }
+      // finish serial container and add to task
+    task.add(std::move(place));
+  }
+
+  {
+    // return home using a MoveTo stage ang pass it the pose of "prepare_L" for the left arm
+    auto stage = std::make_unique<mtc::stages::MoveTo>("return home", interpolation_planner);
+    stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+    stage->setGoal("prepare_L");
+    task.add(std::move(stage));
+  }
 
   return task;
 }

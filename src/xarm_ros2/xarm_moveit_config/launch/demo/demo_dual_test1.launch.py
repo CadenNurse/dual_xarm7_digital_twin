@@ -91,8 +91,7 @@ def launch_setup(context, *args, **kwargs):
     gripper_joint_limits = load_local_yaml(os.path.join(dual_cfg, 'xarm_gripper_joint_limits.yaml'))
 
     # ompl planning
-    xarm_ompl = load_local_yaml(os.path.join(dual_cfg, 'xarm7_ompl_planning.yaml'))
-    gripper_ompl = load_local_yaml(os.path.join(dual_cfg, 'gripper_ompl_planning.yaml'))
+    ompl_main = load_local_yaml(os.path.join(dual_cfg, 'ompl_main.yaml'))
 
     # kinematics and controllers
     kinematics = load_local_yaml(os.path.join(dual_cfg, 'kinematics.yaml'))
@@ -119,18 +118,18 @@ def launch_setup(context, *args, **kwargs):
     moveit_params["ompl"]["planning_plugin"] = "ompl_interface/OMPLPlanner"
     moveit_params["ompl"]["request_adapters"] = [
         "default_planning_request_adapters/ResolveConstraintFrames",
-        "default_planning_request_adapters/ValidateWorkspaceBounds",
+        "default_planning_request_adapters/ValidateWorkspaceBounds", # remove to reduce noise in terminal
         "default_planning_request_adapters/CheckStartStateBounds",
         "default_planning_request_adapters/CheckStartStateCollision",
     ]
     moveit_params["ompl"]["response_adapters"] = [
         "default_planning_response_adapters/AddTimeOptimalParameterization",
-        "default_planning_response_adapters/ValidateSolution",
+        "default_planning_response_adapters/ValidateSolution", 
         "default_planning_response_adapters/DisplayMotionPath",
     ]
     moveit_params["ompl"]["start_state_max_bounds_error"] = 0.1
-    merge_dict(moveit_params["ompl"], xarm_ompl)
-    merge_dict(moveit_params["ompl"], gripper_ompl)
+    merge_dict(moveit_params["ompl"], ompl_main)
+
 
     move_group_node = Node(
         package='moveit_ros_move_group',

@@ -15,6 +15,8 @@
 #include <string>
 #include <sstream>
 #include <typeinfo>
+#include <Eigen/Geometry>
+#include <vector>
 
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -30,6 +32,8 @@
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("mtc_tutorial");
 namespace mtc = moveit::task_constructor;
+static constexpr const char* TCP_LINK = "L_link_tcp";
+static constexpr double ORIENTATION_WEIGHT = 0.15; // lower to reduce distace travelled, increase to reduce total rotations 
 
 class MTCTaskNode
 {
@@ -44,6 +48,15 @@ private:
   mtc::Task createTask();
   const mtc::SolutionBase* selectBestSolution();
   void logAllSolutionCosts() const;
+
+  struct TcpPathMetric
+  {
+    double translation{ 0.0 };
+    double rotation{ 0.0 };
+  };
+
+  TcpPathMetric computeTcpPathMetric(const mtc::SolutionBase& solution, const std::string& link_name) const;
+  TcpPathMetric computeTcpPathMetricRecursive(const mtc::SolutionBase& solution, const std::string& link_name) const;
 
   void executeCallback(
       const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
@@ -73,19 +86,41 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr MTCTaskNode::getNodeBaseIn
 const mtc::SolutionBase* MTCTaskNode::selectBestSolution()
 {
   const mtc::SolutionBase* best = nullptr;
-  double best_cost = std::numeric_limits<double>::infinity();
+  double best_score = std::numeric_limits<double>::infinity();
+  double chosen_translation = 0.0;
+  double chosen_rotation = 0.0;
+  double chosen_mtc_cost = 0.0;
 
   for (const auto& sol : task_.solutions())
   {
     if (!sol)
       continue;
 
-    const double cost = sol->cost();
-    if (!best || cost < best_cost)
+    const TcpPathMetric metric = computeTcpPathMetric(*sol, TCP_LINK);
+    const double mtc_cost = sol->cost();
+    const double score = metric.translation + ORIENTATION_WEIGHT * metric.rotation + 0.001 * mtc_cost;
+
+    RCLCPP_INFO(
+        LOGGER,
+        "Candidate solution: mtc_cost=%.6f tcp_translation=%.6f tcp_rotation=%.6f combined_score=%.6f",
+        mtc_cost, metric.translation, metric.rotation, score);
+
+    if (!best || score < best_score)
     {
       best = sol.get();
-      best_cost = cost;
+      best_score = score;
+      chosen_translation = metric.translation;
+      chosen_rotation = metric.rotation;
+      chosen_mtc_cost = mtc_cost;
     }
+  }
+
+  if (best)
+  {
+    RCLCPP_INFO(
+        LOGGER,
+        "Selected solution: mtc_cost=%.6f tcp_translation=%.6f tcp_rotation=%.6f combined_score=%.6f",
+        chosen_mtc_cost, chosen_translation, chosen_rotation, best_score);
   }
 
   return best;
@@ -102,10 +137,72 @@ void MTCTaskNode::logAllSolutionCosts() const
     }
     else
     {
-      RCLCPP_INFO(LOGGER, "Solution[%zu] cost = %.6f", i, sol->cost());
+      const TcpPathMetric metric = computeTcpPathMetric(*sol, TCP_LINK);
+      const double combined_score =
+          metric.translation + ORIENTATION_WEIGHT * metric.rotation + 0.001 * sol->cost();
+
+      RCLCPP_INFO(
+          LOGGER,
+          "Solution[%zu] mtc_cost=%.6f tcp_translation=%.6f tcp_rotation=%.6f combined_score=%.6f",
+          i, sol->cost(), metric.translation, metric.rotation, combined_score);
     }
     ++i;
   }
+}
+
+MTCTaskNode::TcpPathMetric MTCTaskNode::computeTcpPathMetric(
+    const mtc::SolutionBase& solution, const std::string& link_name) const
+{
+  return computeTcpPathMetricRecursive(solution, link_name);
+}
+
+MTCTaskNode::TcpPathMetric MTCTaskNode::computeTcpPathMetricRecursive(
+    const mtc::SolutionBase& solution, const std::string& link_name) const
+{
+  TcpPathMetric total;
+
+  if (const auto* sub = dynamic_cast<const mtc::SubTrajectory*>(&solution))
+  {
+    auto traj = sub->trajectory(); // robot_trajectory::RobotTrajectoryConstPtr traj = sub->trajectory();
+    if (traj)
+    {
+      const std::size_t n = traj->getWayPointCount();
+      if (n >= 2)
+      {
+        for (std::size_t i = 1; i < n; ++i)
+        {
+          const moveit::core::RobotState& prev = traj->getWayPoint(i - 1);
+          const moveit::core::RobotState& curr = traj->getWayPoint(i);
+
+          const Eigen::Isometry3d& T_prev = prev.getGlobalLinkTransform(link_name);
+          const Eigen::Isometry3d& T_curr = curr.getGlobalLinkTransform(link_name);
+
+          total.translation += (T_curr.translation() - T_prev.translation()).norm();
+
+          Eigen::Quaterniond q_prev(T_prev.rotation());
+          Eigen::Quaterniond q_curr(T_curr.rotation());
+          q_prev.normalize();
+          q_curr.normalize();
+          total.rotation += q_prev.angularDistance(q_curr);
+        }
+      }
+    }
+  }
+
+  if (const auto* seq = dynamic_cast<const mtc::SolutionSequence*>(&solution))
+  {
+    for (const auto& child : seq->solutions())
+    {
+      if (child)
+      {
+        const TcpPathMetric child_metric = computeTcpPathMetricRecursive(*child, link_name);
+        total.translation += child_metric.translation;
+        total.rotation += child_metric.rotation;
+      }
+    }
+  }
+
+  return total;
 }
 
 // code to clamp the velocity if it is under 0.001
@@ -280,7 +377,7 @@ void MTCTaskNode::doTask()
     return;
   }
 
-  if (!task_.plan(20))
+  if (!task_.plan(25))
   {
     RCLCPP_ERROR_STREAM(LOGGER, "Task planning failed");
     return;
@@ -301,12 +398,32 @@ void MTCTaskNode::doTask()
     return;
   }
 
+  const TcpPathMetric selected_metric = computeTcpPathMetric(*selected_solution_, TCP_LINK);
+  const double selected_score =
+      selected_metric.translation + ORIENTATION_WEIGHT * selected_metric.rotation +
+      0.001 * selected_solution_->cost();
+
+  RCLCPP_INFO(
+      LOGGER,
+      "Stored %zu solutions, selected score %.6f (mtc_cost=%.6f, tcp_translation=%.6f, tcp_rotation=%.6f)",
+      task_.solutions().size(),
+      selected_score,
+      selected_solution_->cost(),
+      selected_metric.translation,
+      selected_metric.rotation);
+
   task_.introspection().publishSolution(*selected_solution_);
   plan_ready_ = true;
 
   RCLCPP_INFO(LOGGER, "Plan ready and published to RViz");
-  RCLCPP_INFO(LOGGER, "Stored %zu solutions, selected best cost %.6f",
-              task_.solutions().size(), selected_solution_->cost());
+  RCLCPP_INFO(
+      LOGGER,
+      "Stored %zu solutions, selected score %.6f (mtc_cost=%.6f, tcp_translation=%.6f, tcp_rotation=%.6f)",
+      task_.solutions().size(),
+      selected_score,
+      selected_solution_->cost(),
+      selected_metric.translation,
+      selected_metric.rotation);
   RCLCPP_INFO(LOGGER, "Execute with:");
   RCLCPP_INFO(LOGGER, "ros2 service call /execute_task std_srvs/srv/Trigger");
 }
@@ -340,31 +457,32 @@ mtc::Task MTCTaskNode::createTask()
   auto cartesian_planner = std::make_shared<mtc::solvers::CartesianPath>();
 
   const std::string pipeline_name = "ompl";
-  const std::string connect_planner_id = "RRTConnectkConfigDefault";
+  const std::string connect_planner_id = "RRTConnect";
   sampling_planner->setPlannerId(pipeline_name, connect_planner_id);
 
-  sampling_planner->setProperty("max_velocity_scaling_factor", 0.1);
-  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.1);
+  sampling_planner->setProperty("max_velocity_scaling_factor", 0.25);
+  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.25);
 
-  cartesian_planner->setMaxVelocityScalingFactor(0.05);
-  cartesian_planner->setMaxAccelerationScalingFactor(0.05);
+  cartesian_planner->setMaxVelocityScalingFactor(0.25);
+  cartesian_planner->setMaxAccelerationScalingFactor(0.25);
   cartesian_planner->setStepSize(0.002);
-  cartesian_planner->setJumpThreshold(0.0); // added for collision awareness
+  cartesian_planner->setJumpThreshold(0.0);
 
-  auto stage_open_hand =
-      std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
-  stage_open_hand->setGroup(hand_group_name);
-  stage_open_hand->setGoal("open");
-  // stage_open_hand->setCostTerm(0.5);
-  task.add(std::move(stage_open_hand));
+  {
+    auto stage = std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
+    stage->setGroup(hand_group_name);
+    stage->setGoal("open");
+    task.add(std::move(stage));
+  }
 
-  auto stage_move_to_pick = std::make_unique<mtc::stages::Connect>(
-      "move to pick",
-      mtc::stages::Connect::GroupPlannerVector{ { arm_group_name, sampling_planner } });
-  stage_move_to_pick->setTimeout(20.0);
-  stage_move_to_pick->properties().configureInitFrom(mtc::Stage::PARENT);
-  // stage_move_to_pick->setCostTerm(1.0);
-  task.add(std::move(stage_move_to_pick));
+  {
+    auto stage = std::make_unique<mtc::stages::Connect>(
+        "move to pick",
+        mtc::stages::Connect::GroupPlannerVector{ { arm_group_name, sampling_planner } });
+    stage->setTimeout(20.0);
+    stage->properties().configureInitFrom(mtc::Stage::PARENT);
+    task.add(std::move(stage));
+  }
 
   {
     auto grasp = std::make_unique<mtc::SerialContainer>("pick object");
@@ -377,15 +495,13 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("marker_ns", "approach_object");
       stage->properties().set("link", hand_frame);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.01, 0.03);
+      stage->setMinMaxDistance(0.08, 0.10);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = hand_frame;
       vec.vector.z = 1.0;
       stage->setDirection(vec);
 
-      // Penalize Cartesian approach more because this is where execution trouble has happened
-      // stage->setCostTerm(4.0);
       grasp->insert(std::move(stage));
     }
 
@@ -414,8 +530,6 @@ mtc::Task MTCTaskNode::createTask()
       wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, { "target_pose" });
 
-      // Slightly prefer simpler IK choices
-      // wrapper->setCostTerm(1.5);
       grasp->insert(std::move(wrapper));
     }
 
@@ -428,7 +542,6 @@ mtc::Task MTCTaskNode::createTask()
               ->getJointModelGroup(hand_group_name)
               ->getLinkModelNamesWithCollisionGeometry(),
           true);
-      // stage->setCostTerm(0.1);
       grasp->insert(std::move(stage));
     }
 
@@ -436,7 +549,6 @@ mtc::Task MTCTaskNode::createTask()
       auto stage = std::make_unique<mtc::stages::MoveTo>("close hand", interpolation_planner);
       stage->setGroup(hand_group_name);
       stage->setGoal("close");
-      // stage->setCostTerm(0.5);
       grasp->insert(std::move(stage));
     }
 
@@ -444,7 +556,6 @@ mtc::Task MTCTaskNode::createTask()
       auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("attach object");
       stage->attachObject("object", hand_frame);
       attach_object_stage = stage.get();
-      // stage->setCostTerm(0.1);
       grasp->insert(std::move(stage));
     }
 
@@ -452,7 +563,7 @@ mtc::Task MTCTaskNode::createTask()
       auto stage =
           std::make_unique<mtc::stages::MoveRelative>("lift object", cartesian_planner);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.15, 0.20);
+      stage->setMinMaxDistance(0.10, 0.15);
       stage->setIKFrame(hand_frame);
       stage->properties().set("marker_ns", "lift_object");
 
@@ -461,12 +572,102 @@ mtc::Task MTCTaskNode::createTask()
       vec.vector.z = 1.0;
       stage->setDirection(vec);
 
-      // Penalize Cartesian lift too, but less than approach
-      // stage->setCostTerm(3.0);
       grasp->insert(std::move(stage));
     }
 
     task.add(std::move(grasp));
+  }
+
+  {
+    auto stage_move_to_place = std::make_unique<mtc::stages::Connect>(
+        "move to place",
+        mtc::stages::Connect::GroupPlannerVector{
+            {arm_group_name, sampling_planner}});
+    // { hand_group_name, interpolation_planner } });
+    stage_move_to_place->setTimeout(5.0);
+    stage_move_to_place->properties().configureInitFrom(mtc::Stage::PARENT);
+    task.add(std::move(stage_move_to_place));
+  }
+
+  {
+    auto place = std::make_unique<mtc::SerialContainer>("place object");
+    task.properties().exposeTo(place->properties(), { "eef", "group", "ik_frame" });
+    place->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group", "ik_frame" });
+
+    {
+      auto stage = std::make_unique<mtc::stages::GeneratePlacePose>("generate place pose");
+      stage->properties().configureInitFrom(mtc::Stage::PARENT);
+      stage->properties().set("marker_ns", "place_pose");
+      stage->setObject("object");
+
+      geometry_msgs::msg::PoseStamped target_pose_msg;
+      target_pose_msg.header.frame_id = "object";
+      target_pose_msg.pose.position.x = 0.20;
+      target_pose_msg.pose.position.y = 0.20;
+      target_pose_msg.pose.position.z = 0.002;
+      target_pose_msg.pose.orientation.w = 1.0;
+      stage->setPose(target_pose_msg);
+      stage->setMonitoredStage(attach_object_stage);
+
+      auto wrapper =
+          std::make_unique<mtc::stages::ComputeIK>("place pose IK", std::move(stage));
+      wrapper->setMaxIKSolutions(10);
+      wrapper->setMinSolutionDistance(0.05);
+      wrapper->setIKFrame("object");
+      wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
+      wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, { "target_pose" });
+
+      place->insert(std::move(wrapper));
+    }
+
+    {
+      auto stage = std::make_unique<mtc::stages::MoveTo>("open hand place", interpolation_planner);
+      stage->setGroup(hand_group_name);
+      stage->setGoal("open");
+      place->insert(std::move(stage));
+    }
+
+    {
+      auto stage =
+          std::make_unique<mtc::stages::ModifyPlanningScene>("forbid collision (hand,object)");
+      stage->allowCollisions(
+          "object",
+          task.getRobotModel()
+              ->getJointModelGroup(hand_group_name)
+              ->getLinkModelNamesWithCollisionGeometry(),
+          false);
+      place->insert(std::move(stage));
+    }
+
+    {
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("detach object");
+      stage->detachObject("object", hand_frame);
+      place->insert(std::move(stage));
+    }
+
+    {
+      auto stage = std::make_unique<mtc::stages::MoveRelative>("retreat", cartesian_planner);
+      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+      stage->setMinMaxDistance(0.10, 0.15);
+      stage->setIKFrame(hand_frame);
+      stage->properties().set("marker_ns", "retreat");
+
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = "world";
+      vec.vector.z = 1.0; // backling off from the object
+      stage->setDirection(vec);
+
+      place->insert(std::move(stage));
+    }
+
+    task.add(std::move(place));
+  }
+
+  {
+    auto stage = std::make_unique<mtc::stages::MoveTo>("return home", interpolation_planner);
+    stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+    stage->setGoal("prepare_L");
+    task.add(std::move(stage));
   }
 
   return task;

@@ -1,0 +1,75 @@
+planner_configs:
+  SBL:
+    type: geometric::SBL
+  EST:
+    type: geometric::EST
+  LBKPIECE:
+    type: geometric::LBKPIECE
+  BKPIECE:
+    type: geometric::BKPIECE
+  KPIECE:
+    type: geometric::KPIECE
+  RRT:
+    type: geometric::RRT
+  RRTConnect:
+    type: geometric::RRTConnect
+  RRTstar:
+    type: geometric::RRTstar
+  TRRT:
+    type: geometric::TRRT
+  PRM:
+    type: geometric::PRM
+  PRMstar:
+    type: geometric::PRMstar
+  FMT:
+    type: geometric::FMT
+  BFMT:
+    type: geometric::BFMT
+  PDST:
+    type: geometric::PDST
+  STRIDE:
+    type: geometric::STRIDE
+  BiTRRT:
+    type: geometric::BiTRRT
+  LBTRRT:
+    type: geometric::LBTRRT
+  BiEST:
+    type: geometric::BiEST
+  ProjEST:
+    type: geometric::ProjEST
+  LazyPRM:
+    type: geometric::LazyPRM
+  LazyPRMstar:
+    type: geometric::LazyPRMstar
+  SPARS:
+    type: geometric::SPARS
+  SPARStwo:
+    type: geometric::SPARStwo
+
+L_xarm7:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect
+    - RRT
+    - RRTstar
+    - PRM
+    - PRMstar
+
+R_xarm7:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect
+    - RRT
+    - RRTstar
+    - PRM
+    - PRMstar
+
+L_xarm_gripper:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect
+
+R_xarm_gripper:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect

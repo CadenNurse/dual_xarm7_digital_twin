@@ -31,8 +31,17 @@ ament_target_dependencies(mtc_node_cntrl
   moveit_ros_planning_interface
 )
 
+add_executable(mtc_node_pp src/mtc_node_pp.cpp)
+ament_target_dependencies(mtc_node_pp
+  rclcpp
+  moveit_task_constructor_core
+  moveit_core
+  moveit_ros_planning_interface
+)
+
 install(TARGETS
   mtc_node
+  mtc_node_pp
   mtc_node_cntrl
   minimal
   ARCHIVE DESTINATION lib

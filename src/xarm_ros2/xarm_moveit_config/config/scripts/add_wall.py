@@ -22,7 +22,7 @@ class SceneObjectAdder(Node):
         # Ground
         self.declare_parameter('ground_id', 'ground_plane')
         self.declare_parameter('ground_size', [0.91, 1.2, 0.01])
-        self.declare_parameter('ground_position', [0.17, 0.29, -0.006])
+        self.declare_parameter('ground_position', [0.17, 0.29, -0.0055])
 
         # Shared color
         self.declare_parameter('color_rgba', [0.5, 0.5, 0.5, 0.8])

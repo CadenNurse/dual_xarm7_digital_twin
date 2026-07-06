@@ -82,7 +82,7 @@
     add_bio_gripper="$(arg add_bio_gripper_1)" dof="$(arg dof_1)"
     ros2_control_plugin="$(arg ros2_control_plugin)" robot_type="$(arg robot_type_1)"
     load_gazebo_plugin="false" ros2_control_params="$(arg ros2_control_params)"
-    attach_to="world" attach_xyz="0 0 0" attach_rpy="0 0 0"
+    attach_to="world" attach_xyz="0 0 0.01" attach_rpy="0 0 0"
     add_realsense_d435i="$(arg add_realsense_d435i_1)"
     add_d435i_links="$(arg add_d435i_links_1)"
     add_other_geometry="$(arg add_other_geometry_1)"
@@ -104,7 +104,7 @@
     add_bio_gripper="$(arg add_bio_gripper_2)" dof="$(arg dof_2)"
     ros2_control_plugin="$(arg ros2_control_plugin)" robot_type="$(arg robot_type_2)"
     load_gazebo_plugin="true" ros2_control_params="$(arg ros2_control_params)"
-    attach_to="world" attach_xyz="0 0.55 0" attach_rpy="0 0 0" create_attach_link="false"
+    attach_to="world" attach_xyz="0 0.546 0.01" attach_rpy="0 0 0" create_attach_link="false"
     add_realsense_d435i="$(arg add_realsense_d435i_2)"
     add_d435i_links="$(arg add_d435i_links_2)"
     add_other_geometry="$(arg add_other_geometry_2)"
@@ -121,7 +121,7 @@
   <xacro:gemini_2 prefix="$(arg prefix_2)" parent="$(arg prefix_2)link_eef"/>
 
    <xacro:femto_bolt prefix="G_camera" parent="world">
-    <origin xyz="0.535 0.270 0.875" rpy="0.0 1.3090 3.1416"/>
+    <origin xyz="0.535 0.270 0.884" rpy="0.0 1.308996939 3.1416"/>
   </xacro:femto_bolt>
 
 </robot>

@@ -34,7 +34,7 @@ L_xarm7_traj_controller:
       - L_joint7
     constraints:
       goal_time: 0.5
-      stopped_velocity_tolerance: 0.0
+      stopped_velocity_tolerance: 0.001
       L_joint1: {trajectory: 1.0, goal: 0.01}
       L_joint2: {trajectory: 1.0, goal: 0.01}
       L_joint3: {trajectory: 1.0, goal: 0.01}
@@ -44,6 +44,7 @@ L_xarm7_traj_controller:
     state_publish_rate: 25.0
     action_monitor_rate: 10.0
     interface_name: position
+    allow_nonzero_velocity_at_trajectory_end: true
 
 R_xarm7_traj_controller:
   ros__parameters:
@@ -63,7 +64,7 @@ R_xarm7_traj_controller:
       - R_joint7
     constraints:
       goal_time: 0.5
-      stopped_velocity_tolerance: 0.0
+      stopped_velocity_tolerance: 0.001
       R_joint1: {trajectory: 1.0, goal: 0.01}
       R_joint2: {trajectory: 1.0, goal: 0.01}
       R_joint3: {trajectory: 1.0, goal: 0.01}
@@ -73,6 +74,7 @@ R_xarm7_traj_controller:
     state_publish_rate: 25.0
     action_monitor_rate: 10.0
     interface_name: position
+    allow_nonzero_velocity_at_trajectory_end: true
 
 # L_xarm_gripper:
 #   ros__parameters:

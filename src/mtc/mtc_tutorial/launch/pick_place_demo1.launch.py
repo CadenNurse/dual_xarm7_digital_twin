@@ -78,7 +78,6 @@ def generate_launch_description():
     moveit_params["ompl"]["planning_plugin"] = "ompl_interface/OMPLPlanner"
     moveit_params["ompl"]["planning_plugins"] = ["ompl_interface/OMPLPlanner"]
     moveit_params["ompl"]["request_adapters"] = [
-        # "default_planning_request_adapters/AddRuckigTrajectorySmoothing",
         "default_planning_request_adapters/ResolveConstraintFrames",
         "default_planning_request_adapters/ValidateWorkspaceBounds",
         "default_planning_request_adapters/CheckStartStateBounds",

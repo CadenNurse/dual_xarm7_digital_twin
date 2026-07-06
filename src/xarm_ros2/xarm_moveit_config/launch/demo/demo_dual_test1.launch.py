@@ -118,7 +118,6 @@ def launch_setup(context, *args, **kwargs):
     moveit_params.setdefault("ompl", {})
     moveit_params["ompl"]["planning_plugin"] = "ompl_interface/OMPLPlanner"
     moveit_params["ompl"]["request_adapters"] = [
-        # "default_planning_request_adapters/AddRuckigTrajectorySmoothing",
         "default_planning_request_adapters/ResolveConstraintFrames",
         "default_planning_request_adapters/ValidateWorkspaceBounds",
         "default_planning_request_adapters/CheckStartStateBounds",
@@ -174,35 +173,35 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
     )
 
-    set_left_collision_sensitivity = TimerAction(
-        period=3.0,
-        actions=[
-            ExecuteProcess(
-                cmd=[
-                    'ros2', 'service', 'call',
-                    '/L_xarm/set_collision_sensitivity',
-                    'xarm_msgs/srv/SetInt16',
-                    '{data: 4}'
-                ],
-                output='screen'
-            )
-        ]
-    )
+    # set_left_collision_sensitivity = TimerAction(
+    #     period=3.0,
+    #     actions=[
+    #         ExecuteProcess(
+    #             cmd=[
+    #                 'ros2', 'service', 'call',
+    #                 '/L_xarm/set_collision_sensitivity',
+    #                 'xarm_msgs/srv/SetInt16',
+    #                 '{data: 3}'
+    #             ],
+    #             output='screen'
+    #         )
+    #     ]
+    # )
 
-    set_right_collision_sensitivity = TimerAction(
-        period=3.5,
-        actions=[
-            ExecuteProcess(
-                cmd=[
-                    'ros2', 'service', 'call',
-                    '/R_xarm/set_collision_sensitivity',
-                    'xarm_msgs/srv/SetInt16',
-                    '{data: 4}'
-                ],
-                output='screen'
-            )
-        ]
-    )
+    # set_right_collision_sensitivity = TimerAction(
+    #     period=3.5,
+    #     actions=[
+    #         ExecuteProcess(
+    #             cmd=[
+    #                 'ros2', 'service', 'call',
+    #                 '/R_xarm/set_collision_sensitivity',
+    #                 'xarm_msgs/srv/SetInt16',
+    #                 '{data: 3}'
+    #             ],
+    #             output='screen'
+    #         )
+    #     ]
+    # )
 
     # # set_left_collision_rebound = TimerAction(
     # #     period=4.0,
@@ -223,8 +222,8 @@ def launch_setup(context, *args, **kwargs):
         'joint_state_broadcaster',
         '{}{}_traj_controller'.format(prefix_1.perform(context), xarm_type_1),
         '{}{}_traj_controller'.format(prefix_2.perform(context), xarm_type_2),
-        'L_xarm_gripper',
-        'R_xarm_gripper',
+        # 'L_xarm_gripper',
+        # 'R_xarm_gripper',
     ]
 
     joint_state_publisher_node = Node(
@@ -258,8 +257,8 @@ def launch_setup(context, *args, **kwargs):
         move_group_node,
         ros2_control_node,
         rviz_node,
-        set_left_collision_sensitivity,
-        set_right_collision_sensitivity,
+        # set_left_collision_sensitivity,
+        # set_right_collision_sensitivity,
     ] + controller_nodes
 
 

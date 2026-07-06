@@ -6,10 +6,15 @@
 #include <moveit/task_constructor/stages.h>
 #include <moveit_msgs/msg/move_it_error_codes.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <moveit/task_constructor/storage.h>
+#include <moveit/robot_trajectory/robot_trajectory.hpp>
+#include <cmath>
 #include <mutex>
 #include <limits>
 #include <memory>
 #include <string>
+#include <sstream>
+#include <typeinfo>
 
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -37,7 +42,7 @@ public:
 
 private:
   mtc::Task createTask();
-  const mtc::SolutionBase* selectBestSolution() const;
+  const mtc::SolutionBase* selectBestSolution();
   void logAllSolutionCosts() const;
 
   void executeCallback(
@@ -65,7 +70,7 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr MTCTaskNode::getNodeBaseIn
   return node_->get_node_base_interface();
 }
 
-const mtc::SolutionBase* MTCTaskNode::selectBestSolution() const
+const mtc::SolutionBase* MTCTaskNode::selectBestSolution()
 {
   const mtc::SolutionBase* best = nullptr;
   double best_cost = std::numeric_limits<double>::infinity();
@@ -103,6 +108,87 @@ void MTCTaskNode::logAllSolutionCosts() const
   }
 }
 
+// code to clamp the velocity if it is under 0.001
+static void clampFinalWaypoint(robot_trajectory::RobotTrajectory& traj,
+                               const std::string& label,
+                               double eps = 1e-3)
+{
+  const std::size_t n = traj.getWayPointCount();
+  if (n == 0)
+  {
+    RCLCPP_WARN(LOGGER, "[clamp] %s: trajectory has 0 waypoints", label.c_str());
+    return;
+  }
+
+  moveit::core::RobotState& last = *traj.getWayPointPtr(n - 1);
+  const moveit::core::JointModelGroup* jmg = traj.getGroup();
+  if (!jmg)
+  {
+    RCLCPP_WARN(LOGGER, "[clamp] %s: trajectory has no JointModelGroup", label.c_str());
+    return;
+  }
+
+  std::vector<double> v;
+  last.copyJointGroupVelocities(jmg, v);
+
+  std::ostringstream before;
+  before << "[clamp] " << label << " BEFORE:";
+  for (double x : v) before << " " << x;
+  RCLCPP_INFO(LOGGER, "%s", before.str().c_str());
+
+  bool changed = false;
+  for (double& x : v)
+  {
+    if (std::abs(x) < eps)
+    {
+      x = 0.0;
+      changed = true;
+    }
+  }
+
+  if (changed)
+    last.setJointGroupVelocities(jmg, v);
+
+  std::vector<double> verify;
+  last.copyJointGroupVelocities(jmg, verify);
+
+  std::ostringstream after;
+  after << "[clamp] " << label << " AFTER:";
+  for (double x : verify) after << " " << x;
+  RCLCPP_INFO(LOGGER, "%s", after.str().c_str());
+}
+
+static void clampSequenceRecursive(const mtc::SolutionBase& solution, int depth = 0)
+{
+  std::string indent(depth * 2, ' ');
+  RCLCPP_INFO(LOGGER,
+              "[clamp] %snode type='%s' cost=%.6f",
+              indent.c_str(), typeid(solution).name(), solution.cost());
+
+  if (const auto* sub = dynamic_cast<const mtc::SubTrajectory*>(&solution))
+  {
+    auto traj = std::const_pointer_cast<robot_trajectory::RobotTrajectory>(sub->trajectory());
+    if (traj)
+      clampFinalWaypoint(*traj, indent + "SubTrajectory");
+    else
+      RCLCPP_WARN(LOGGER, "[clamp] %sSubTrajectory has null trajectory", indent.c_str());
+  }
+
+  if (const auto* seq = dynamic_cast<const mtc::SolutionSequence*>(&solution))
+  {
+    std::size_t i = 0;
+    for (const auto& child : seq->solutions())
+    {
+      if (child)
+      {
+        RCLCPP_INFO(LOGGER, "[clamp] %ssequence child[%zu]", indent.c_str(), i);
+        clampSequenceRecursive(*child, depth + 1);
+      }
+      ++i;
+    }
+  }
+}
+
 void MTCTaskNode::executeCallback(
     const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
@@ -137,6 +223,8 @@ void MTCTaskNode::executeCallback(
   RCLCPP_INFO(LOGGER,
               "Execute service called. Executing selected solution with cost %.6f",
               selected_solution_->cost());
+
+  clampSequenceRecursive(*selected_solution_);
 
   auto result = task_.execute(*selected_solution_);
 
@@ -289,7 +377,7 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("marker_ns", "approach_object");
       stage->properties().set("link", hand_frame);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.08, 0.15);
+      stage->setMinMaxDistance(0.04, 0.08);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = hand_frame;
@@ -316,7 +404,7 @@ mtc::Task MTCTaskNode::createTask()
           Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY()) *
           Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
       grasp_frame_transform.linear() = q.matrix();
-      grasp_frame_transform.translation().z() = 0.16;
+      grasp_frame_transform.translation().z() = 0.12;
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("grasp pose IK", std::move(stage));

@@ -92,8 +92,15 @@ def generate_launch_description():
         package="mtc_tutorial",
         executable="mtc_node_pp",
         output="screen",
-        arguments=['--ros-args', '--log-level', 'warn'],
-        parameters=[moveit_params],
+        arguments=['--ros-args', '--log-level', 'info'],
+        parameters=[{
+                    "robot_description": moveit_params["robot_description"],
+        "robot_description_semantic": moveit_params["robot_description_semantic"],
+        "robot_description_kinematics": moveit_params["robot_description_kinematics"],
+        "robot_description_planning": moveit_params["robot_description_planning"],
+        "planning_pipelines": moveit_params["planning_pipelines"],
+        "ompl": moveit_params["ompl"],
+        }],
     )
 
     return LaunchDescription([pick_place_demo])

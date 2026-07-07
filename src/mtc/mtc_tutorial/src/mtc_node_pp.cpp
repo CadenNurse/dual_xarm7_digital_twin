@@ -17,6 +17,9 @@
 #include <typeinfo>
 #include <Eigen/Geometry>
 #include <vector>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -58,6 +61,9 @@ private:
   TcpPathMetric computeTcpPathMetric(const mtc::SolutionBase& solution, const std::string& link_name) const;
   TcpPathMetric computeTcpPathMetricRecursive(const mtc::SolutionBase& solution, const std::string& link_name) const;
 
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
   void executeCallback(
       const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
       std::shared_ptr<std_srvs::srv::Trigger::Response> response);
@@ -73,6 +79,9 @@ private:
 MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   : node_{ std::make_shared<rclcpp::Node>("mtc_node", options) }
 {
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_buffer_->setUsingDedicatedThread(true);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, node_, true);
   execute_service_ = node_->create_service<std_srvs::srv::Trigger>(
       "/execute_task",
       std::bind(&MTCTaskNode::executeCallback, this, std::placeholders::_1, std::placeholders::_2));
@@ -341,22 +350,64 @@ void MTCTaskNode::executeCallback(
 
 void MTCTaskNode::setupPlanningScene()
 {
+  const std::string world_frame = "workspace_origin";
+  const std::string tag_frame = "tag_21";
+  const std::string object_id = "object";
+
+  if (!tf_buffer_) {
+    RCLCPP_ERROR(LOGGER, "TF buffer is not initialized");
+    return;
+  }
+
+  if (!tf_buffer_->canTransform(world_frame, tag_frame, tf2::TimePointZero, tf2::durationFromSec(10.0))) {
+    RCLCPP_ERROR(LOGGER, "Cannot transform from '%s' to '%s'", world_frame.c_str(), tag_frame.c_str());
+    return;
+  }
+
+  geometry_msgs::msg::TransformStamped tf_tag;
+  try {
+    tf_tag = tf_buffer_->lookupTransform(
+        world_frame, tag_frame, tf2::TimePointZero, tf2::durationFromSec(10.0));
+  } catch (const tf2::TransformException& ex) {
+    RCLCPP_ERROR(LOGGER, "Failed to look up AprilTag transform: %s", ex.what());
+    return;
+  }
+
   moveit_msgs::msg::CollisionObject object;
-  object.id = "object";
-  object.header.frame_id = "world";
-  object.primitives.resize(1);
-  object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-  object.primitives[0].dimensions = { 0.1, 0.02 };
+  object.id = object_id;
+  object.header.frame_id = world_frame;
+
+  shape_msgs::msg::SolidPrimitive primitive;
+  primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+  primitive.dimensions.resize(3);
+  primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = 0.12;  // height
+  primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = 0.07;  // length
+  primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = 0.025; // thickness
 
   geometry_msgs::msg::Pose pose;
-  pose.position.x = 0.25;
-  pose.position.y = 0.35;
-  pose.position.z = 0.05;
-  pose.orientation.w = 1.0;
-  object.pose = pose;
+
+  Eigen::Isometry3d T = tf2::transformToEigen(tf_tag.transform);
+
+  Eigen::Isometry3d T_tag_to_box = Eigen::Isometry3d::Identity();
+  T_tag_to_box.translation().x() = -0.05;
+
+  Eigen::Isometry3d T_box = T * T_tag_to_box;
+  pose = tf2::toMsg(T_box);
+
+  object.primitives.push_back(primitive);
+  object.primitive_poses.push_back(pose);
+  object.operation = moveit_msgs::msg::CollisionObject::ADD;
 
   moveit::planning_interface::PlanningSceneInterface psi;
   psi.applyCollisionObject(object);
+  rclcpp::sleep_for(std::chrono::milliseconds(1000));
+
+  RCLCPP_INFO(LOGGER,
+              "Applied AprilTag box collision object at [%.3f, %.3f, %.3f]",
+              pose.position.z, pose.position.y, pose.position.x);
+  RCLCPP_INFO(LOGGER, "tag z = %.3f", tf_tag.transform.translation.x);
+  RCLCPP_INFO(LOGGER, "box z = %.3f", T.translation().x());
+  
 }
 
 void MTCTaskNode::doTask()
@@ -377,7 +428,7 @@ void MTCTaskNode::doTask()
     return;
   }
 
-  if (!task_.plan(25))
+  if (!task_.plan(35))
   {
     RCLCPP_ERROR_STREAM(LOGGER, "Task planning failed");
     return;
@@ -442,11 +493,11 @@ mtc::Task MTCTaskNode::createTask()
   task.setProperty("eef", hand_group_name);
   task.setProperty("ik_frame", hand_frame);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-  mtc::Stage* current_state_ptr = nullptr;
-  mtc::Stage* attach_object_stage = nullptr;
-#pragma GCC diagnostic pop
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+    mtc::Stage* current_state_ptr = nullptr;
+    mtc::Stage* attach_object_stage = nullptr;
+  #pragma GCC diagnostic pop
 
   auto stage_state_current = std::make_unique<mtc::stages::CurrentState>("current");
   current_state_ptr = stage_state_current.get();
@@ -489,48 +540,55 @@ mtc::Task MTCTaskNode::createTask()
     task.properties().exposeTo(grasp->properties(), { "eef", "group", "ik_frame" });
     grasp->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group", "ik_frame" });
 
-    {
-      auto stage =
-          std::make_unique<mtc::stages::MoveRelative>("approach object", cartesian_planner);
-      stage->properties().set("marker_ns", "approach_object");
-      stage->properties().set("link", hand_frame);
-      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.08, 0.10);
-
-      geometry_msgs::msg::Vector3Stamped vec;
-      vec.header.frame_id = hand_frame;
-      vec.vector.z = 1.0;
-      stage->setDirection(vec);
-
-      grasp->insert(std::move(stage));
-    }
-
+    // 1) Top-down pregrasp: TCP aligned with object's +X axis (object X is vertical),
+    //    hovering 10 cm above the object. No yaw sampling for now.
     {
       auto stage = std::make_unique<mtc::stages::GenerateGraspPose>("generate grasp pose");
       stage->properties().configureInitFrom(mtc::Stage::PARENT);
       stage->properties().set("marker_ns", "grasp_pose");
       stage->setPreGraspPose("open");
       stage->setObject("object");
-      stage->setAngleDelta(M_PI / 18);
       stage->setMonitoredStage(current_state_ptr);
+      stage->setAngleDelta(M_PI);  // effectively two canonical pose. could try multiple as long as it picks thin side
 
       Eigen::Isometry3d grasp_frame_transform = Eigen::Isometry3d::Identity();
-      Eigen::Quaterniond q =
-          Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
-          Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY()) *
-          Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
-      grasp_frame_transform.linear() = q.matrix();
-      grasp_frame_transform.translation().z() = 0.0;
+
+      // Hover 10 cm above object along object +X (your object's vertical axis)
+      grasp_frame_transform.translation() = Eigen::Vector3d(0.0, 0.0, 0.10);
+
+      // Top-down orientation:
+      // Assumes the TCP approach axis should align with object -X so the gripper faces downward.
+      // If your tool points the opposite way, flip the sign or use AngleAxisd(M_PI, UnitY()).
+      grasp_frame_transform.linear() =
+         (Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitX()) *   // rotate 90 deg about object vertical
+          Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("grasp pose IK", std::move(stage));
+      wrapper->setIKFrame(grasp_frame_transform, hand_frame);
       wrapper->setMaxIKSolutions(40);
       wrapper->setMinSolutionDistance(0.05);
-      wrapper->setIKFrame(grasp_frame_transform, hand_frame);
       wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, { "target_pose" });
 
       grasp->insert(std::move(wrapper));
+    }
+
+    // 2) Insert downward into the grasp by 3-5 cm relative to the object vertical axis
+    {
+      auto stage =
+          std::make_unique<mtc::stages::MoveRelative>("insert grasp", cartesian_planner);
+      stage->properties().set("marker_ns", "insert_grasp");
+      stage->properties().set("link", hand_frame);
+      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+      stage->setMinMaxDistance(0.06, 0.08);
+
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = "object";
+      vec.vector.x = -1.0;   // move downward along object vertical axis
+      stage->setDirection(vec);
+
+      grasp->insert(std::move(stage));
     }
 
     {
@@ -559,17 +617,17 @@ mtc::Task MTCTaskNode::createTask()
       grasp->insert(std::move(stage));
     }
 
+    // 3) Lift until TCP reaches workspace x = 0.20 m (workspace x is vertical)
     {
-      auto stage =
-          std::make_unique<mtc::stages::MoveRelative>("lift object", cartesian_planner);
+      auto stage = std::make_unique<mtc::stages::MoveRelative>("lift object", cartesian_planner);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.10, 0.15);
+      stage->setMinMaxDistance(0.18, 0.20);   // lift 25 cm
       stage->setIKFrame(hand_frame);
       stage->properties().set("marker_ns", "lift_object");
 
       geometry_msgs::msg::Vector3Stamped vec;
-      vec.header.frame_id = "world";
-      vec.vector.z = 1.0;
+      vec.header.frame_id = "workspace_origin";
+      vec.vector.x = 1.0;   // x is vertical in your workspace
       stage->setDirection(vec);
 
       grasp->insert(std::move(stage));
@@ -599,19 +657,21 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().configureInitFrom(mtc::Stage::PARENT);
       stage->properties().set("marker_ns", "place_pose");
       stage->setObject("object");
+      stage->setTimeout(3.0);
 
       geometry_msgs::msg::PoseStamped target_pose_msg;
-      target_pose_msg.header.frame_id = "object";
-      target_pose_msg.pose.position.x = 0.20;
-      target_pose_msg.pose.position.y = 0.20;
-      target_pose_msg.pose.position.z = 0.002;
+      target_pose_msg.header.frame_id = "workspace_origin";
+      target_pose_msg.pose.position.x = 0.062;
+      target_pose_msg.pose.position.y = 0.15;
+      target_pose_msg.pose.position.z = 0.15;
       target_pose_msg.pose.orientation.w = 1.0;
       stage->setPose(target_pose_msg);
       stage->setMonitoredStage(attach_object_stage);
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("place pose IK", std::move(stage));
-      wrapper->setMaxIKSolutions(10);
+      // wrapper->setTimeout(5.0);
+      wrapper->setMaxIKSolutions(40);
       wrapper->setMinSolutionDistance(0.05);
       wrapper->setIKFrame("object");
       wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
@@ -645,16 +705,17 @@ mtc::Task MTCTaskNode::createTask()
       place->insert(std::move(stage));
     }
 
+    // 4) Retreat 8 cm upward relative to the placed object's vertical axis
     {
       auto stage = std::make_unique<mtc::stages::MoveRelative>("retreat", cartesian_planner);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.10, 0.15);
+      stage->setMinMaxDistance(0.08, 0.08);
       stage->setIKFrame(hand_frame);
       stage->properties().set("marker_ns", "retreat");
 
       geometry_msgs::msg::Vector3Stamped vec;
-      vec.header.frame_id = "world";
-      vec.vector.z = 1.0; // backling off from the object
+      vec.header.frame_id = "object";
+      vec.vector.x = 1.0;   // retreat upward along object vertical axis
       stage->setDirection(vec);
 
       place->insert(std::move(stage));
@@ -681,14 +742,20 @@ int main(int argc, char** argv)
   options.automatically_declare_parameters_from_overrides(true);
 
   auto mtc_task_node = std::make_shared<MTCTaskNode>(options);
-
   rclcpp::executors::MultiThreadedExecutor executor;
+
   executor.add_node(mtc_task_node->getNodeBaseInterface());
 
+  rclcpp::sleep_for(std::chrono::seconds(1));
   mtc_task_node->setupPlanningScene();
   mtc_task_node->doTask();
 
+  RCLCPP_INFO(LOGGER, "Node is alive and waiting for service calls.");
+  RCLCPP_INFO(LOGGER, "Execute from another terminal with:");
+  RCLCPP_INFO(LOGGER, "ros2 service call /execute_task std_srvs/srv/Trigger");
+
   executor.spin();
+
   rclcpp::shutdown();
   return 0;
 }

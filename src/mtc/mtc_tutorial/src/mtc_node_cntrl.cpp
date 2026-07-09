@@ -349,7 +349,6 @@ mtc::Task MTCTaskNode::createTask()
   cartesian_planner->setMaxVelocityScalingFactor(0.05);
   cartesian_planner->setMaxAccelerationScalingFactor(0.05);
   cartesian_planner->setStepSize(0.002);
-  cartesian_planner->setJumpThreshold(0.0); // added for collision awareness
 
   auto stage_open_hand =
       std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);

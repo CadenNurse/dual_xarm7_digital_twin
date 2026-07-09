@@ -19,7 +19,11 @@ with open(os.path.join(os.getcwd(), 'xarm/version.py')) as ver_file:
     exec(ver_file.read(), main_ns)
     version = main_ns['__version__']
 
-long_description = open('README.rst', encoding='utf-8').read()
+# Replace the open() line with:
+try:
+    long_description = open('README.rst', encoding='utf-8').read()
+except FileNotFoundError:
+    long_description = ''
 
 requirements_path = os.path.join(os.getcwd(), 'requirements.txt')
 if os.path.exists(requirements_path):

@@ -305,6 +305,7 @@ mtc::Task MTCTaskNode::createTask()
   mtc::Stage* left_attach_stage = nullptr;
   mtc::Stage* left_handover_pose_stage = nullptr;
   mtc::Stage* right_attach_stage = nullptr;
+  mtc::Stage* left_prepare_stage = nullptr; // uncomment with the rest
 
   auto sampling_planner = std::make_shared<mtc::solvers::PipelinePlanner>(node_);
   auto interpolation_planner = std::make_shared<mtc::solvers::JointInterpolationPlanner>();
@@ -362,6 +363,15 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(stage));
   }
 
+// IF YOU ONLY ENABLE THIS, KEEP CURRENT_STATE_PTR IN THE FOLLOWING GENERATEGRASPPOSE STAGE
+// {
+//   auto stage = std::make_unique<mtc::stages::MoveTo>("move left to prepare_L", interpolation_planner);
+//   stage->setGroup(left_arm_group_name);
+//   stage->setGoal(kLeftHomePose);
+//   left_prepare_stage = stage.get();
+//   task.add(std::move(stage));
+// }
+
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move left to pick",
@@ -369,13 +379,6 @@ mtc::Task MTCTaskNode::createTask()
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
-
-  // {
-  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move left to prepare_L", interpolation_planner);
-  //   stage->setGroup(left_arm_group_name);
-  //   stage->setGoal(kLeftHomePose);
-  //   task.add(std::move(stage));
-  // }
 
   {
     auto left_pick = std::make_unique<mtc::SerialContainer>("left pick and lift");
@@ -391,6 +394,7 @@ mtc::Task MTCTaskNode::createTask()
       stage->setPreGraspPose("open");
       stage->setObject(kObjectId);
       stage->setMonitoredStage(current_state_ptr);
+      // stage->setMonitoredStage(left_prepare_stage ? left_prepare_stage : current_state_ptr); if stages get uncommented, use this
       stage->setAngleDelta(M_PI / 2.0);
 
       Eigen::Isometry3d grasp_tf = Eigen::Isometry3d::Identity();
@@ -675,6 +679,7 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(transfer));
   }
 
+  // DONT UNCOMMENT THIS UNTIL EVERY OTHER ONE WORKS
   // {
   //   auto stage = std::make_unique<mtc::stages::MoveTo>("move left to post_handover_L", interpolation_planner);
   //   stage->setGroup(left_arm_group_name);
@@ -690,6 +695,13 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(stage));
   }
 
+  // {
+  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move right to pre_place_R", interpolation_planner);
+  //   stage->setGroup(right_arm_group_name);
+  //   stage->setGoal("pre_place_R");
+  //   task.add(std::move(stage));
+  // }  
+
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move right to place",
@@ -697,13 +709,6 @@ mtc::Task MTCTaskNode::createTask()
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
-
-  // {
-  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move right to pre_place_R", interpolation_planner);
-  //   stage->setGroup(right_arm_group_name);
-  //   stage->setGoal("pre_place_R");
-  //   task.add(std::move(stage));
-  // }
 
   {
     auto right_place = std::make_unique<mtc::SerialContainer>("right place object");

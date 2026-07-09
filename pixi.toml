@@ -44,7 +44,6 @@ python = ">=3.12.13,<3.13"
 ros-jazzy-desktop = ">=0.11.0,<0.12"
 ros-jazzy-rmw-implementation = ">=2.15.6,<3"
 colcon-common-extensions = ">=0.3.0,<0.4"
-lttng-ust = "*"
 
 #Build Tools
 cmake = ">=4.3.4,<5"

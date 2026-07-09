@@ -440,41 +440,25 @@ void MTCTaskNode::doTask()
     return;
   }
 
-  logAllSolutionCosts();
+  const auto& sols = task_.solutions();
+  selected_solution_ = sols.front().get();
 
-  selected_solution_ = selectBestSolution();
   if (!selected_solution_)
   {
-    RCLCPP_ERROR_STREAM(LOGGER, "Failed to select a valid solution");
+    RCLCPP_ERROR_STREAM(LOGGER, "Selected solution is null");
     return;
   }
 
-  const TcpPathMetric selected_metric = computeTcpPathMetric(*selected_solution_, TCP_LINK);
-  const double selected_score =
-      selected_metric.translation + ORIENTATION_WEIGHT * selected_metric.rotation +
-      0.001 * selected_solution_->cost();
-
   RCLCPP_INFO(
       LOGGER,
-      "Stored %zu solutions, selected score %.6f (mtc_cost=%.6f, tcp_translation=%.6f, tcp_rotation=%.6f)",
-      task_.solutions().size(),
-      selected_score,
-      selected_solution_->cost(),
-      selected_metric.translation,
-      selected_metric.rotation);
+      "Stored %zu solutions, selected first solution with mtc_cost=%.6f",
+      sols.size(),
+      selected_solution_->cost());
 
   task_.introspection().publishSolution(*selected_solution_);
   plan_ready_ = true;
 
   RCLCPP_INFO(LOGGER, "Plan ready and published to RViz");
-  RCLCPP_INFO(
-      LOGGER,
-      "Stored %zu solutions, selected score %.6f (mtc_cost=%.6f, tcp_translation=%.6f, tcp_rotation=%.6f)",
-      task_.solutions().size(),
-      selected_score,
-      selected_solution_->cost(),
-      selected_metric.translation,
-      selected_metric.rotation);
   RCLCPP_INFO(LOGGER, "Execute with:");
   RCLCPP_INFO(LOGGER, "ros2 service call /execute_task std_srvs/srv/Trigger");
 }

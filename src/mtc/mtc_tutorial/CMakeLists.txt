@@ -39,10 +39,28 @@ ament_target_dependencies(mtc_node_pp
   moveit_ros_planning_interface
 )
 
+add_executable(mtc_node_handoff src/mtc_node_handoff.cpp)
+ament_target_dependencies(mtc_node_handoff
+  rclcpp
+  moveit_task_constructor_core
+  moveit_core
+  moveit_ros_planning_interface
+)
+
+add_executable(mtc_node_shoff src/mtc_node_shoff.cpp)
+ament_target_dependencies(mtc_node_shoff
+  rclcpp
+  moveit_task_constructor_core
+  moveit_core
+  moveit_ros_planning_interface
+)
+
 install(TARGETS
   mtc_node
   mtc_node_pp
   mtc_node_cntrl
+  mtc_node_handoff
+  mtc_node_shoff
   minimal
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

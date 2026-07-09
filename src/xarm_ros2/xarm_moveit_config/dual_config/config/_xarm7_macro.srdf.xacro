@@ -88,6 +88,36 @@
       <joint name="${prefix}joint7" value="2.1468" />
     </group_state>
 
+    <group_state name="pre_handover_R" group="${prefix}xarm7">
+      <joint name="${prefix}joint1" value="-1.10" />
+      <joint name="${prefix}joint2" value="-0.45" />
+      <joint name="${prefix}joint3" value="1.85" />
+      <joint name="${prefix}joint4" value="1.10" />
+      <joint name="${prefix}joint5" value="-0.20" />
+      <joint name="${prefix}joint6" value="-1.45" />
+      <joint name="${prefix}joint7" value="1.85" />
+    </group_state>
+
+    <group_state name="post_handover_L" group="${prefix}xarm7">
+      <joint name="${prefix}joint1" value="-1.55" />
+      <joint name="${prefix}joint2" value="0.70" />
+      <joint name="${prefix}joint3" value="1.55" />
+      <joint name="${prefix}joint4" value="1.20" />
+      <joint name="${prefix}joint5" value="0.30" />
+      <joint name="${prefix}joint6" value="-1.55" />
+      <joint name="${prefix}joint7" value="3.80" />
+    </group_state>
+
+    <group_state name="pre_place_R" group="${prefix}xarm7">
+      <joint name="${prefix}joint1" value="-1.20" />
+      <joint name="${prefix}joint2" value="-0.95" />
+      <joint name="${prefix}joint3" value="1.95" />
+      <joint name="${prefix}joint4" value="1.30" />
+      <joint name="${prefix}joint5" value="-0.25" />
+      <joint name="${prefix}joint6" value="-1.55" />
+      <joint name="${prefix}joint7" value="1.95" />
+    </group_state>
+
     <!-- gripper -->
     <xacro:if value="${add_gripper}">
       <group name="${prefix}xarm_gripper">

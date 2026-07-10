@@ -62,6 +62,14 @@ constexpr char kLeftHomePose[] = "prepare_L";
 constexpr char kRightHomePose[] = "prepare_R";
 
 constexpr std::size_t kMaxPlanSolutions = 60;
+
+geometry_msgs::msg::Quaternion quatFromRPY(double roll, double pitch, double yaw)
+{
+  tf2::Quaternion q;
+  q.setRPY(roll, pitch, yaw);
+  return tf2::toMsg(q);
+}
+
 }  // namespace
 
 class MTCTaskNode
@@ -285,6 +293,7 @@ void MTCTaskNode::executeCallback(
   response->success = false;
   response->message = "Task execution failed";
   RCLCPP_ERROR(LOGGER, "Task execution failed with code %d", result.val);
+
 }
 
 mtc::Task MTCTaskNode::createTask()
@@ -325,12 +334,6 @@ mtc::Task MTCTaskNode::createTask()
   cartesian_precision.rotational = 0.08;
   cartesian_planner->setPrecision(cartesian_precision);
 
-  geometry_msgs::msg::Quaternion upright_q;
-  upright_q.x = 0.0;
-  upright_q.y = 0.0;
-  upright_q.z = 0.0;
-  upright_q.w = 1.0;
-
   auto configureLeftContainer = [&](mtc::ContainerBase& container) {
     container.properties().set("group", left_arm_group_name);
     container.properties().set("eef", left_hand_group_name);
@@ -363,14 +366,13 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(stage));
   }
 
-// IF YOU ONLY ENABLE THIS, KEEP CURRENT_STATE_PTR IN THE FOLLOWING GENERATEGRASPPOSE STAGE
-// {
-//   auto stage = std::make_unique<mtc::stages::MoveTo>("move left to prepare_L", interpolation_planner);
-//   stage->setGroup(left_arm_group_name);
-//   stage->setGoal(kLeftHomePose);
-//   left_prepare_stage = stage.get();
-//   task.add(std::move(stage));
-// }
+  { // MIGHT BE REDUNDENT
+    auto stage = std::make_unique<mtc::stages::MoveTo>("move left to prepare_L", interpolation_planner);
+    stage->setGroup(left_arm_group_name);
+    stage->setGoal(kLeftHomePose);
+    left_prepare_stage = stage.get();
+    task.add(std::move(stage));
+  }
 
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
@@ -393,16 +395,15 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("marker_ns", "left_top_grasp");
       stage->setPreGraspPose("open");
       stage->setObject(kObjectId);
-      stage->setMonitoredStage(current_state_ptr);
-      // stage->setMonitoredStage(left_prepare_stage ? left_prepare_stage : current_state_ptr); if stages get uncommented, use this
-      stage->setAngleDelta(M_PI / 2.0);
+      stage->setMonitoredStage(left_prepare_stage ? left_prepare_stage : current_state_ptr);
+      stage->setAngleDelta(M_PI);
 
       Eigen::Isometry3d grasp_tf = Eigen::Isometry3d::Identity();
-      grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.08);
       grasp_tf.linear() =
           (Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitX()) *
            Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitZ()))
-              .toRotationMatrix();
+           .toRotationMatrix();
+      grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.08);
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("left top grasp IK", std::move(stage));
@@ -421,7 +422,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("left descend into grasp", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.04, 0.12);
+      stage->setMinMaxDistance(0.04, 0.06);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kObjectId;
@@ -500,10 +501,10 @@ mtc::Task MTCTaskNode::createTask()
 
     geometry_msgs::msg::PoseStamped handover_pose;
     handover_pose.header.frame_id = kWorldFrame;
-    handover_pose.pose.position.x = 0.30;
-    handover_pose.pose.position.y = 0.35;
-    handover_pose.pose.position.z = 0.30;
-    handover_pose.pose.orientation = upright_q;
+    handover_pose.pose.position.x = 0.40;
+    handover_pose.pose.position.y = 0.40;
+    handover_pose.pose.position.z = 0.35;
+    handover_pose.pose.orientation = quatFromRPY(M_PI_2, 0.0, 0.0); // 90 deg about x (z as they are flipped)
     stage->setPose(handover_pose);
 
     auto wrapper =
@@ -520,13 +521,6 @@ mtc::Task MTCTaskNode::createTask()
 
     task.add(std::move(left_move_handover));
   }
-
-  // {
-  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move right to pre_handover_R", interpolation_planner);
-  //   stage->setGroup(right_arm_group_name);
-  //   stage->setGoal("pre_handover_R");
-  //   task.add(std::move(stage));
-  // }
 
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
@@ -552,14 +546,14 @@ mtc::Task MTCTaskNode::createTask()
       stage->setPreGraspPose("open");
       stage->setObject(kObjectId);
       stage->setMonitoredStage(left_handover_pose_stage);
-      stage->setAngleDelta(M_PI / 2.0);
+      stage->setAngleDelta(M_PI);
 
-      Eigen::Isometry3d grasp_tf = Eigen::Isometry3d::Identity();
-      const Eigen::Quaterniond q =
-          Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY()) *
-          Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ());
-      grasp_tf.linear() = q.matrix();
-      grasp_tf.translation() = Eigen::Vector3d(-0.05, 0.06, 0.0);
+      Eigen::Isometry3d grasp_tf = Eigen::Isometry3d::Identity(); // use M_PI_2 UnitX, M_PI_2 UnitZ for upside-down side grasp
+      grasp_tf.linear() =
+          (Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitX()) *
+           Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ()))
+           .toRotationMatrix();
+      grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.12);
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("right side grasp IK", std::move(stage));
@@ -578,11 +572,11 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right insert side grasp", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.03, 0.10);
+      stage->setMinMaxDistance(0.06, 0.10);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kObjectId;
-      vec.vector.y = -1.0;
+      vec.vector.x = 1.0;
       stage->setDirection(vec);
 
       right_handover->insert(std::move(stage));
@@ -615,8 +609,7 @@ mtc::Task MTCTaskNode::createTask()
     }
 
     {
-      auto stage =
-          std::make_unique<mtc::stages::MoveTo>("close right hand", interpolation_planner);
+      auto stage = std::make_unique<mtc::stages::MoveTo>("close right hand", interpolation_planner);
       stage->setGroup(right_hand_group_name);
       stage->setGoal("close");
       right_handover->insert(std::move(stage));
@@ -629,9 +622,10 @@ mtc::Task MTCTaskNode::createTask()
     auto transfer = std::make_unique<mtc::SerialContainer>("handover transfer left to right");
 
     {
-      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("attach object to right tcp");
-      stage->attachObject(kObjectId, right_hand_frame);
-      right_attach_stage = stage.get();
+      auto stage =
+          std::make_unique<mtc::stages::MoveTo>("open left hand release", interpolation_planner);
+      stage->setGroup(left_hand_group_name);
+      stage->setGoal("open");
       transfer->insert(std::move(stage));
     }
 
@@ -643,10 +637,39 @@ mtc::Task MTCTaskNode::createTask()
     }
 
     {
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("attach object to right tcp");
+      stage->attachObject(kObjectId, right_hand_frame);
+      right_attach_stage = stage.get();
+      transfer->insert(std::move(stage));
+    }
+
+    {
       auto stage =
-          std::make_unique<mtc::stages::MoveTo>("open left hand release", interpolation_planner);
-      stage->setGroup(left_hand_group_name);
-      stage->setGoal("open");
+          std::make_unique<mtc::stages::MoveRelative>("left retreat after handover", cartesian_planner);
+      stage->setGroup(left_arm_group_name);
+      stage->setIKFrame(left_hand_frame);
+      stage->setMinMaxDistance(0.06, 0.10);
+
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = kWorldFrame;
+      vec.vector.y = -1.0;
+      stage->setDirection(vec);
+
+      transfer->insert(std::move(stage));
+    }
+
+    {
+      auto stage =
+          std::make_unique<mtc::stages::MoveRelative>("right retreat after handover", cartesian_planner);
+      stage->setGroup(right_arm_group_name);
+      stage->setIKFrame(right_hand_frame);
+      stage->setMinMaxDistance(0.06, 0.10);
+
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = kWorldFrame;
+      vec.vector.y = 1.0;
+      stage->setDirection(vec);
+
       transfer->insert(std::move(stage));
     }
 
@@ -679,33 +702,12 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(transfer));
   }
 
-  // DONT UNCOMMENT THIS UNTIL EVERY OTHER ONE WORKS
-  // {
-  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move left to post_handover_L", interpolation_planner);
-  //   stage->setGroup(left_arm_group_name);
-  //   stage->setGoal("post_handover_L");
-  //   task.add(std::move(stage));
-  // }
-
-  {
-    auto stage =
-        std::make_unique<mtc::stages::MoveTo>("return left to prepare_L", interpolation_planner);
-    stage->setGroup(left_arm_group_name);
-    stage->setGoal(kLeftHomePose);
-    task.add(std::move(stage));
-  }
-
-  // {
-  //   auto stage = std::make_unique<mtc::stages::MoveTo>("move right to pre_place_R", interpolation_planner);
-  //   stage->setGroup(right_arm_group_name);
-  //   stage->setGoal("pre_place_R");
-  //   task.add(std::move(stage));
-  // }  
-
+  //  PROBLMEATIC CONNECT BIG TIME CAUSING ME PAIN
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move right to place",
-        mtc::stages::Connect::GroupPlannerVector{{right_arm_group_name, sampling_planner}});
+        mtc::stages::Connect::GroupPlannerVector{{left_arm_group_name, sampling_planner},
+                                                 {right_arm_group_name, sampling_planner}}); // could remove if causing issues. none at the moment
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
@@ -722,14 +724,15 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("marker_ns", "right_place_pose");
       stage->setObject(kObjectId);
       stage->setMonitoredStage(right_attach_stage);
-      stage->setTimeout(3.0);
+      stage->setTimeout(5.0);
+
 
       geometry_msgs::msg::PoseStamped target_pose_msg;
       target_pose_msg.header.frame_id = kWorldFrame;
-      target_pose_msg.pose.position.x = 0.062;
-      target_pose_msg.pose.position.y = 0.40;
+      target_pose_msg.pose.position.x = 0.08;
+      target_pose_msg.pose.position.y = 0.60;
       target_pose_msg.pose.position.z = 0.15;
-      target_pose_msg.pose.orientation = upright_q;
+      target_pose_msg.pose.orientation = quatFromRPY(-M_PI_2, 0.0, 0.0);
       stage->setPose(target_pose_msg);
 
       auto wrapper = std::make_unique<mtc::stages::ComputeIK>("right place IK", std::move(stage));
@@ -737,7 +740,7 @@ mtc::Task MTCTaskNode::createTask()
       wrapper->setEndEffector(right_hand_group_name);
       wrapper->setIKFrame(right_hand_frame);
       wrapper->setMaxIKSolutions(20);
-      wrapper->setMinSolutionDistance(0.1);
+      wrapper->setMinSolutionDistance(0.05);
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, {"target_pose"});
 
       right_place->insert(std::move(wrapper));
@@ -748,6 +751,13 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveTo>("open right hand place", interpolation_planner);
       stage->setGroup(right_hand_group_name);
       stage->setGoal("open");
+      right_place->insert(std::move(stage));
+    }
+
+    {
+      auto stage =
+          std::make_unique<mtc::stages::ModifyPlanningScene>("detach object from right tcp");
+      stage->detachObject(kObjectId, right_hand_frame);
       right_place->insert(std::move(stage));
     }
 
@@ -765,17 +775,10 @@ mtc::Task MTCTaskNode::createTask()
 
     {
       auto stage =
-          std::make_unique<mtc::stages::ModifyPlanningScene>("detach object from right tcp");
-      stage->detachObject(kObjectId, right_hand_frame);
-      right_place->insert(std::move(stage));
-    }
-
-    {
-      auto stage =
           std::make_unique<mtc::stages::MoveRelative>("right retreat after place", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.05, 0.11);
+      stage->setMinMaxDistance(0.10, 0.15);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;

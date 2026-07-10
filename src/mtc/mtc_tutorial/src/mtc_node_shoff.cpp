@@ -464,7 +464,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("lift object with left", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.15, 0.20);
+      stage->setMinMaxDistance(0.12, 0.18);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -648,7 +648,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("left retreat after handover", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.06, 0.10);
+      stage->setMinMaxDistance(0.08, 0.12);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -663,7 +663,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right retreat after handover", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.06, 0.10);
+      stage->setMinMaxDistance(0.08, 0.12);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -702,12 +702,20 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(transfer));
   }
 
+  {
+    auto stage =
+        std::make_unique<mtc::stages::MoveTo>("return left to prepare_L", interpolation_planner);
+    stage->setGroup(left_arm_group_name);
+    stage->setGoal(kLeftHomePose);
+    task.add(std::move(stage));
+  }
+
   //  PROBLMEATIC CONNECT BIG TIME CAUSING ME PAIN
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move right to place",
         mtc::stages::Connect::GroupPlannerVector{{left_arm_group_name, sampling_planner},
-                                                 {right_arm_group_name, sampling_planner}}); // could remove if causing issues. none at the moment
+                                                 {right_arm_group_name, sampling_planner}}); // could remove if causing issues. sending L_arm back to handover at the moment
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
@@ -729,7 +737,7 @@ mtc::Task MTCTaskNode::createTask()
 
       geometry_msgs::msg::PoseStamped target_pose_msg;
       target_pose_msg.header.frame_id = kWorldFrame;
-      target_pose_msg.pose.position.x = 0.08;
+      target_pose_msg.pose.position.x = 0.05;
       target_pose_msg.pose.position.y = 0.60;
       target_pose_msg.pose.position.z = 0.15;
       target_pose_msg.pose.orientation = quatFromRPY(-M_PI_2, 0.0, 0.0);
@@ -739,7 +747,7 @@ mtc::Task MTCTaskNode::createTask()
       wrapper->setGroup(right_arm_group_name);
       wrapper->setEndEffector(right_hand_group_name);
       wrapper->setIKFrame(right_hand_frame);
-      wrapper->setMaxIKSolutions(20);
+      wrapper->setMaxIKSolutions(40);
       wrapper->setMinSolutionDistance(0.05);
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, {"target_pose"});
 
@@ -789,6 +797,14 @@ mtc::Task MTCTaskNode::createTask()
     }
 
     task.add(std::move(right_place));
+  }
+
+  {
+    auto stage =
+        std::make_unique<mtc::stages::MoveTo>("return left to prepare_L", interpolation_planner);
+    stage->setGroup(left_arm_group_name);
+    stage->setGoal(kLeftHomePose);
+    task.add(std::move(stage));
   }
 
   {

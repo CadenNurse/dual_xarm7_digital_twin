@@ -39,8 +39,8 @@ ament_target_dependencies(mtc_node_pp
   moveit_ros_planning_interface
 )
 
-add_executable(mtc_node_handoff src/mtc_node_handoff.cpp)
-ament_target_dependencies(mtc_node_handoff
+add_executable(mtc_node_phoff src/mtc_node_phoff.cpp)
+ament_target_dependencies(mtc_node_phoff
   rclcpp
   moveit_task_constructor_core
   moveit_core
@@ -55,12 +55,32 @@ ament_target_dependencies(mtc_node_shoff
   moveit_ros_planning_interface
 )
 
+add_executable(close_laptop src/close_laptop.cpp)
+ament_target_dependencies(close_laptop
+  rclcpp
+  moveit_task_constructor_core
+  moveit_core
+  moveit_ros_planning_interface
+)
+
+add_executable(laptop_hinge_state_publisher src/laptop_hinge_state_publisher.cpp)
+ament_target_dependencies(laptop_hinge_state_publisher
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
 install(TARGETS
   mtc_node
   mtc_node_pp
   mtc_node_cntrl
-  mtc_node_handoff
+  mtc_node_phoff
   mtc_node_shoff
+  close_laptop
+  laptop_hinge_state_publisher
   minimal
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

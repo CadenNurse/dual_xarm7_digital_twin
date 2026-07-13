@@ -108,6 +108,16 @@
       <joint name="${prefix}joint7" value="1.95" />
     </group_state>
 
+    <group_state name="pre_handover_R" group="R_xarm7">
+      <joint name="R_joint1" value="-1.0821" />
+      <joint name="R_joint2" value="-1.0821" />
+      <joint name="R_joint3" value="1.2217" />
+      <joint name="R_joint4" value="0.6981" />
+      <joint name="R_joint5" value="-0.6283" />
+      <joint name="R_joint6" value="1.1345" />
+      <joint name="R_joint7" value="1.6930" />
+    </group_state>
+
     <!-- gripper -->
     <xacro:if value="${add_gripper}">
       <group name="${prefix}xarm_gripper">

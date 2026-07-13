@@ -1,0 +1,244 @@
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+
+class LaptopHingeStatePublisher : public rclcpp::Node
+{
+public:
+  LaptopHingeStatePublisher()
+  : rclcpp::Node("laptop_hinge_state_publisher")
+  {
+    world_frame_ = declare_parameter<std::string>("world_frame", "workspace_origin");
+    laptop_root_frame_ = declare_parameter<std::string>("laptop_root_frame", "laptop_base_link");
+    base_tag_frame_ = declare_parameter<std::string>("base_tag_frame", "tag_laptop_base");
+    lid_inner_tag_frame_ = declare_parameter<std::string>("lid_inner_tag_frame", "tag_laptop_lid_inner");
+    lid_outer_tag_frame_ = declare_parameter<std::string>("lid_outer_tag_frame", "tag_laptop_lid_outer");
+    hinge_joint_name_ = declare_parameter<std::string>("hinge_joint_name", "hinge_joint");
+    hinge_axis_ = declare_parameter<std::string>("hinge_axis", "x");
+    publish_rate_hz_ = declare_parameter<double>("publish_rate_hz", 30.0);
+    hinge_lower_ = declare_parameter<double>("hinge_lower", 0.0);
+    hinge_upper_ = declare_parameter<double>("hinge_upper", 3.14159265359);
+
+    base_tag_to_root_xyz_ = declare_parameter<std::vector<double>>(
+      "base_tag_to_root_xyz", std::vector<double>{0.0, 0.0, 0.0});
+    base_tag_to_root_rpy_ = declare_parameter<std::vector<double>>(
+      "base_tag_to_root_rpy", std::vector<double>{0.0, 0.0, 0.0});
+    lid_tag_to_lid_xyz_ = declare_parameter<std::vector<double>>(
+      "lid_tag_to_lid_xyz", std::vector<double>{0.0, 0.0, 0.0});
+    lid_tag_to_lid_rpy_ = declare_parameter<std::vector<double>>(
+      "lid_tag_to_lid_rpy", std::vector<double>{0.0, 0.0, 0.0});
+
+    validateVectorParam(base_tag_to_root_xyz_, "base_tag_to_root_xyz");
+    validateVectorParam(base_tag_to_root_rpy_, "base_tag_to_root_rpy");
+    validateVectorParam(lid_tag_to_lid_xyz_, "lid_tag_to_lid_xyz");
+    validateVectorParam(lid_tag_to_lid_rpy_, "lid_tag_to_lid_rpy");
+
+    if (hinge_axis_ != "x" && hinge_axis_ != "y" && hinge_axis_ != "z") {
+      throw std::runtime_error("hinge_axis must be one of: x, y, z");
+    }
+
+    joint_pub_ = create_publisher<sensor_msgs::msg::JointState>("/laptop/joint_states", 10);
+
+    RCLCPP_INFO(get_logger(), "Laptop hinge state publisher constructed");
+    RCLCPP_INFO(get_logger(), "world_frame: %s", world_frame_.c_str());
+    RCLCPP_INFO(get_logger(), "laptop_root_frame: %s", laptop_root_frame_.c_str());
+    RCLCPP_INFO(get_logger(), "base_tag_frame: %s", base_tag_frame_.c_str());
+    RCLCPP_INFO(get_logger(), "lid_inner_tag_frame: %s", lid_inner_tag_frame_.c_str());
+    RCLCPP_INFO(get_logger(), "lid_outer_tag_frame: %s", lid_outer_tag_frame_.c_str());
+  }
+
+  void initialize()
+  {
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+    tf_buffer_->setUsingDedicatedThread(true);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, shared_from_this(), true);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
+
+    const auto period = std::chrono::duration<double>(1.0 / std::max(1.0, publish_rate_hz_));
+    timer_ = create_wall_timer(
+      std::chrono::duration_cast<std::chrono::milliseconds>(period),
+      std::bind(&LaptopHingeStatePublisher::update, this));
+
+    RCLCPP_INFO(get_logger(), "Laptop hinge state publisher initialized");
+  }
+
+private:
+  static void validateVectorParam(const std::vector<double>& vec, const std::string& name)
+  {
+    if (vec.size() != 3) {
+      throw std::runtime_error(name + " must contain exactly 3 values");
+    }
+  }
+
+  static tf2::Transform transformMsgToTf(const geometry_msgs::msg::Transform& msg)
+  {
+    tf2::Transform tf;
+    tf2::fromMsg(msg, tf);
+    return tf;
+  }
+
+  static geometry_msgs::msg::Transform tfToTransformMsg(const tf2::Transform& tf)
+  {
+    return tf2::toMsg(tf);
+  }
+
+  static tf2::Transform makeTransform(const std::vector<double>& xyz, const std::vector<double>& rpy)
+  {
+    tf2::Quaternion q;
+    q.setRPY(rpy[0], rpy[1], rpy[2]);
+    tf2::Transform t;
+    t.setOrigin(tf2::Vector3(xyz[0], xyz[1], xyz[2]));
+    t.setRotation(q);
+    return t;
+  }
+
+  bool lookupTransform(
+    const std::string& target_frame,
+    const std::string& source_frame,
+    geometry_msgs::msg::TransformStamped& out_tf)
+  {
+    try {
+      out_tf = tf_buffer_->lookupTransform(
+        target_frame, source_frame, tf2::TimePointZero, tf2::durationFromSec(0.05));
+      return true;
+    } catch (const tf2::TransformException& ex) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Failed TF lookup %s <- %s: %s",
+        target_frame.c_str(), source_frame.c_str(), ex.what());
+      return false;
+    }
+  }
+
+  double extractHingeAngle(const tf2::Transform& base_tag_T_lid) const
+  {
+    tf2::Matrix3x3 rotation(base_tag_T_lid.getRotation());
+    double roll = 0.0, pitch = 0.0, yaw = 0.0;
+    rotation.getRPY(roll, pitch, yaw);
+
+    double angle = 0.0;
+    if (hinge_axis_ == "x") {
+      angle = roll;
+    } else if (hinge_axis_ == "y") {
+      angle = pitch;
+    } else {
+      angle = yaw;
+    }
+
+    while (angle < 0.0) angle += 2.0 * M_PI;
+    while (angle > 2.0 * M_PI) angle -= 2.0 * M_PI;
+
+    return std::clamp(angle, hinge_lower_, hinge_upper_);
+  }
+
+  void publishLaptopRoot(const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg)
+  {
+    const tf2::Transform world_T_base_tag = transformMsgToTf(world_T_base_tag_msg.transform);
+    const tf2::Transform base_tag_T_root = makeTransform(base_tag_to_root_xyz_, base_tag_to_root_rpy_);
+    const tf2::Transform world_T_root = world_T_base_tag * base_tag_T_root;
+
+    geometry_msgs::msg::TransformStamped root_tf;
+    root_tf.header.stamp = now();
+    root_tf.header.frame_id = world_frame_;
+    root_tf.child_frame_id = laptop_root_frame_;
+    root_tf.transform = tfToTransformMsg(world_T_root);
+    tf_broadcaster_->sendTransform(root_tf);
+  }
+
+  void publishHingeJoint(
+    const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg,
+    const geometry_msgs::msg::TransformStamped& world_T_lid_tag_msg)
+  {
+    const tf2::Transform world_T_base_tag = transformMsgToTf(world_T_base_tag_msg.transform);
+    const tf2::Transform world_T_lid_tag = transformMsgToTf(world_T_lid_tag_msg.transform);
+
+    const tf2::Transform base_tag_T_world = world_T_base_tag.inverse();
+    const tf2::Transform base_tag_T_lid_tag = base_tag_T_world * world_T_lid_tag;
+    const tf2::Transform lid_tag_T_lid = makeTransform(lid_tag_to_lid_xyz_, lid_tag_to_lid_rpy_);
+    const tf2::Transform base_tag_T_lid = base_tag_T_lid_tag * lid_tag_T_lid;
+
+    const double hinge_angle = extractHingeAngle(base_tag_T_lid);
+
+    sensor_msgs::msg::JointState joint_state_msg;
+    joint_state_msg.header.stamp = now();
+    joint_state_msg.name = {hinge_joint_name_};
+    joint_state_msg.position = {hinge_angle};
+    joint_pub_->publish(joint_state_msg);
+
+    RCLCPP_INFO_THROTTLE(
+      get_logger(), *get_clock(), 1000,
+      "Published hinge_joint=%.3f rad (%.1f deg)",
+      hinge_angle, hinge_angle * 180.0 / M_PI);
+  }
+
+  void update()
+  {
+    geometry_msgs::msg::TransformStamped world_T_base_tag_msg;
+    if (!lookupTransform(world_frame_, base_tag_frame_, world_T_base_tag_msg)) {
+      return;
+    }
+
+    publishLaptopRoot(world_T_base_tag_msg);
+
+    geometry_msgs::msg::TransformStamped world_T_lid_tag_msg;
+    bool have_lid = lookupTransform(world_frame_, lid_inner_tag_frame_, world_T_lid_tag_msg);
+    if (!have_lid) {
+      have_lid = lookupTransform(world_frame_, lid_outer_tag_frame_, world_T_lid_tag_msg);
+    }
+
+    if (!have_lid) {
+      return;
+    }
+
+    publishHingeJoint(world_T_base_tag_msg, world_T_lid_tag_msg);
+  }
+
+  std::string world_frame_;
+  std::string laptop_root_frame_;
+  std::string base_tag_frame_;
+  std::string lid_inner_tag_frame_;
+  std::string lid_outer_tag_frame_;
+  std::string hinge_joint_name_;
+  std::string hinge_axis_;
+
+  double publish_rate_hz_;
+  double hinge_lower_;
+  double hinge_upper_;
+
+  std::vector<double> base_tag_to_root_xyz_;
+  std::vector<double> base_tag_to_root_rpy_;
+  std::vector<double> lid_tag_to_lid_xyz_;
+  std::vector<double> lid_tag_to_lid_rpy_;
+
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+};
+
+int main(int argc, char** argv)
+{
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<LaptopHingeStatePublisher>();
+  node->initialize();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
+}

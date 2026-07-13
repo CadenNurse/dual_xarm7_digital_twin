@@ -23,8 +23,9 @@ def load_yaml(package_name, relative_path):
 
 
 def generate_launch_description():
-    pkg_share = get_package_share_directory("xarm_moveit_config")
-    cfg = os.path.join(pkg_share, "dual_config", "config")
+    xarm_moveit_share = get_package_share_directory("xarm_moveit_config")
+    xarm_description_dir = get_package_share_directory("xarm_description")
+    cfg = os.path.join(xarm_moveit_share, "dual_config", "config")
 
     moveit_params = {
         "robot_description": xacro.process_file(
@@ -68,15 +69,13 @@ def generate_launch_description():
 
     merge_dict(moveit_params, moveit_ctrls)
 
-    moveit_params.setdefault("planning_pipelines", {})
     moveit_params["planning_pipelines"] = ["ompl"]
-
     moveit_params.setdefault("ompl", {})
     moveit_params["ompl"]["planning_plugin"] = "ompl_interface/OMPLPlanner"
     moveit_params["ompl"]["planning_plugins"] = ["ompl_interface/OMPLPlanner"]
     moveit_params["ompl"]["request_adapters"] = [
         "default_planning_request_adapters/ResolveConstraintFrames",
-        "default_planning_request_adapters/ValidateWorkspaceBounds", # remove to reduce noise in terminal
+        "default_planning_request_adapters/ValidateWorkspaceBounds",
         "default_planning_request_adapters/CheckStartStateBounds",
         "default_planning_request_adapters/CheckStartStateCollision",
     ]
@@ -88,19 +87,74 @@ def generate_launch_description():
     moveit_params["ompl"]["start_state_max_bounds_error"] = 0.1
     merge_dict(moveit_params["ompl"], ompl_main)
 
-    pick_place_demo = Node(
+    laptop_xacro_path = os.path.join(
+        xarm_description_dir, "urdf", "other", "thinkpad_x13_gen1.urdf.xacro"
+    )
+    laptop_robot_description = xacro.process_file(laptop_xacro_path).toxml()
+
+    close_laptop_node = Node(
         package="mtc_tutorial",
-        executable="mtc_node_phoff",
+        executable="close_laptop",
         output="screen",
-        arguments=['--ros-args', '--log-level', 'info'],
+        arguments=["--ros-args", "--log-level", "info"],
         parameters=[{
-                    "robot_description": moveit_params["robot_description"],
-        "robot_description_semantic": moveit_params["robot_description_semantic"],
-        "robot_description_kinematics": moveit_params["robot_description_kinematics"],
-        "robot_description_planning": moveit_params["robot_description_planning"],
-        "planning_pipelines": moveit_params["planning_pipelines"],
-        "ompl": moveit_params["ompl"],
+            "robot_description": moveit_params["robot_description"],
+            "robot_description_semantic": moveit_params["robot_description_semantic"],
+            "robot_description_kinematics": moveit_params["robot_description_kinematics"],
+            "robot_description_planning": moveit_params["robot_description_planning"],
+            "planning_pipelines": moveit_params["planning_pipelines"],
+            "ompl": moveit_params["ompl"],
+            "world_frame": "workspace_origin",
+            "base_tag_frame": "tag_laptop_base",
+            "object_id": "laptop_base",
+            "base_length": 0.305,
+            "base_width": 0.217,
+            "base_thickness": 0.015,
+            "base_tag_to_object_xyz": [0.0, 0.0, 0.0],
+            "base_tag_to_object_rpy": [0.0, 0.0, 0.0],
         }],
     )
 
-    return LaunchDescription([pick_place_demo])
+    laptop_state_publisher = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        namespace="",
+        name="robot_state_publisher",
+        output="screen",
+        parameters=[{
+            "robot_description": laptop_robot_description,
+        }],
+        remappings=[
+            ("joint_states", "/laptop/joint_states"),
+        ],
+    )
+
+    laptop_hinge_state_publisher_node = Node(
+        package="mtc_tutorial",
+        executable="laptop_hinge_state_publisher",
+        namespace="laptop",
+        name="laptop_hinge_state_publisher",
+        output="screen",
+        parameters=[{
+            "world_frame": "world",
+            "laptop_root_frame": "laptop_world",
+            "base_tag_frame": "tag_laptop_base",
+            "lid_inner_tag_frame": "tag_laptop_lid_inner",
+            "lid_outer_tag_frame": "tag_laptop_lid_outer",
+            "hinge_joint_name": "hinge_joint",
+            "hinge_axis": "x",
+            "hinge_lower": 0.0,
+            "hinge_upper": 3.14159265359,
+            "publish_rate_hz": 30.0,
+            "base_tag_to_root_xyz": [0.0, 0.0, 0.0],
+            "base_tag_to_root_rpy": [1.5708, 3.1416, 1.5708],
+            "lid_tag_to_lid_xyz": [0.0, 0.0, 0.0],
+            "lid_tag_to_lid_rpy": [0.0, 0.0, 0.0],
+        }],
+    )
+
+    return LaunchDescription([
+        laptop_state_publisher,
+        laptop_hinge_state_publisher_node,
+        # close_laptop_node,
+    ])

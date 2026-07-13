@@ -75,6 +75,7 @@
   <xacro:include filename="$(find xarm_description)/urdf/xarm_device_macro.xacro" />
   <xacro:include filename="$(find orbbec_description)/urdf/gemini_2.urdf.xacro" /> <!-- _collision.urdf for collision geometry of the gemini 2 -->
   <xacro:include filename="$(find orbbec_description)/urdf/femto_bolt.urdf.xacro" />
+  <!-- <xacro:include filename="$(find xarm_description)/other/thinkpad_x13_gen1.urdf.xacro" />  STUPID LAPTOP Hardcode -->
 
   <xacro:xarm_device prefix="$(arg prefix_1)" hw_ns="$(arg hw_ns)" limited="$(arg limited)"
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
@@ -123,5 +124,9 @@
    <xacro:femto_bolt prefix="G_camera" parent="world">
     <origin xyz="0.535 0.270 0.884" rpy="0.0 1.308996939 3.1416"/>
   </xacro:femto_bolt>
+<!-- 
+  <xacro:laptop parent="world">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:laptop> -->
 
 </robot>

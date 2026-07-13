@@ -25,6 +25,8 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <limits>
+#include <algorithm>
 
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -61,7 +63,7 @@ constexpr char kRightTcpLink[] = "R_link_tcp";
 constexpr char kLeftHomePose[] = "prepare_L";
 constexpr char kRightHomePose[] = "prepare_R";
 
-constexpr std::size_t kMaxPlanSolutions = 60;
+constexpr std::size_t kMaxPlanSolutions = 80;
 
 geometry_msgs::msg::Quaternion quatFromRPY(double roll, double pitch, double yaw)
 {
@@ -313,19 +315,20 @@ mtc::Task MTCTaskNode::createTask()
   mtc::Stage* current_state_ptr = nullptr;
   mtc::Stage* left_attach_stage = nullptr;
   mtc::Stage* left_handover_pose_stage = nullptr;
-  mtc::Stage* right_attach_stage = nullptr;
   mtc::Stage* left_prepare_stage = nullptr; // uncomment with the rest
+  mtc::Stage* right_confirm_stage = nullptr;
+
 
   auto sampling_planner = std::make_shared<mtc::solvers::PipelinePlanner>(node_);
   auto interpolation_planner = std::make_shared<mtc::solvers::JointInterpolationPlanner>();
   auto cartesian_planner = std::make_shared<mtc::solvers::CartesianPath>();
 
   sampling_planner->setPlannerId("ompl", "RRTConnect");
-  sampling_planner->setProperty("max_velocity_scaling_factor", 0.20);
-  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.20);
+  sampling_planner->setProperty("max_velocity_scaling_factor", 0.30);
+  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.30);
 
-  cartesian_planner->setMaxVelocityScalingFactor(0.20);
-  cartesian_planner->setMaxAccelerationScalingFactor(0.20);
+  cartesian_planner->setMaxVelocityScalingFactor(0.30);
+  cartesian_planner->setMaxAccelerationScalingFactor(0.30);
   cartesian_planner->setStepSize(0.005);
   cartesian_planner->setMinFraction(0.90);
 
@@ -550,7 +553,7 @@ mtc::Task MTCTaskNode::createTask()
 
       Eigen::Isometry3d grasp_tf = Eigen::Isometry3d::Identity(); // use M_PI_2 UnitX, M_PI_2 UnitZ for upside-down side grasp
       grasp_tf.linear() =
-          (Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitX()) *
+          (Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitX()) *
            Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ()))
            .toRotationMatrix();
       grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.12);
@@ -639,7 +642,6 @@ mtc::Task MTCTaskNode::createTask()
     {
       auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("attach object to right tcp");
       stage->attachObject(kObjectId, right_hand_frame);
-      right_attach_stage = stage.get();
       transfer->insert(std::move(stage));
     }
 
@@ -648,7 +650,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("left retreat after handover", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.08, 0.12);
+      stage->setMinMaxDistance(0.05, 0.08);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -663,8 +665,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right retreat after handover", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.08, 0.12);
-
+      stage->setMinMaxDistance(0.05, 0.08);
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
       vec.vector.y = 1.0;
@@ -710,12 +711,18 @@ mtc::Task MTCTaskNode::createTask()
     task.add(std::move(stage));
   }
 
+  {
+    auto stage = 
+        std::make_unique<mtc::stages::ModifyPlanningScene>("obtain right position");
+    right_confirm_stage = stage.get();
+    task.add(std::move(stage));
+  }
+
   //  PROBLMEATIC CONNECT BIG TIME CAUSING ME PAIN
   {
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move right to place",
-        mtc::stages::Connect::GroupPlannerVector{{left_arm_group_name, sampling_planner},
-                                                 {right_arm_group_name, sampling_planner}}); // could remove if causing issues. sending L_arm back to handover at the moment
+        mtc::stages::Connect::GroupPlannerVector{{right_arm_group_name, sampling_planner}});
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
@@ -731,13 +738,13 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("ik_frame", right_hand_frame);
       stage->properties().set("marker_ns", "right_place_pose");
       stage->setObject(kObjectId);
-      stage->setMonitoredStage(right_attach_stage);
+      stage->setMonitoredStage(right_confirm_stage);
       stage->setTimeout(5.0);
 
 
       geometry_msgs::msg::PoseStamped target_pose_msg;
       target_pose_msg.header.frame_id = kWorldFrame;
-      target_pose_msg.pose.position.x = 0.05;
+      target_pose_msg.pose.position.x = 0.04;
       target_pose_msg.pose.position.y = 0.60;
       target_pose_msg.pose.position.z = 0.15;
       target_pose_msg.pose.orientation = quatFromRPY(-M_PI_2, 0.0, 0.0);
@@ -786,7 +793,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right retreat after place", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.10, 0.15);
+      stage->setMinMaxDistance(0.06, 0.10);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -797,14 +804,6 @@ mtc::Task MTCTaskNode::createTask()
     }
 
     task.add(std::move(right_place));
-  }
-
-  {
-    auto stage =
-        std::make_unique<mtc::stages::MoveTo>("return left to prepare_L", interpolation_planner);
-    stage->setGroup(left_arm_group_name);
-    stage->setGoal(kLeftHomePose);
-    task.add(std::move(stage));
   }
 
   {

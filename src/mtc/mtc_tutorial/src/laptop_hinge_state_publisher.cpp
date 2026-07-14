@@ -38,15 +38,21 @@ public:
       "base_tag_to_root_xyz", std::vector<double>{0.0, 0.0, 0.0});
     base_tag_to_root_rpy_ = declare_parameter<std::vector<double>>(
       "base_tag_to_root_rpy", std::vector<double>{0.0, 0.0, 0.0});
-    lid_tag_to_lid_xyz_ = declare_parameter<std::vector<double>>(
-      "lid_tag_to_lid_xyz", std::vector<double>{0.0, 0.0, 0.0});
-    lid_tag_to_lid_rpy_ = declare_parameter<std::vector<double>>(
-      "lid_tag_to_lid_rpy", std::vector<double>{0.0, 0.0, 0.0});
+    lid_inner_tag_to_lid_xyz_ = declare_parameter<std::vector<double>>(
+      "lid_inner_tag_to_lid_xyz", std::vector<double>{0.0, 0.0, 0.0});
+    lid_inner_tag_to_lid_rpy_ = declare_parameter<std::vector<double>>(
+      "lid_inner_tag_to_lid_rpy", std::vector<double>{0.0, 0.0, 0.0});
+    lid_outer_tag_to_lid_xyz_ = declare_parameter<std::vector<double>>(
+      "lid_outer_tag_to_lid_xyz", std::vector<double>{0.0, 0.0, 0.0});
+    lid_outer_tag_to_lid_rpy_ = declare_parameter<std::vector<double>>(
+      "lid_outer_tag_to_lid_rpy", std::vector<double>{0.0, 0.0, 0.0});
 
     validateVectorParam(base_tag_to_root_xyz_, "base_tag_to_root_xyz");
     validateVectorParam(base_tag_to_root_rpy_, "base_tag_to_root_rpy");
-    validateVectorParam(lid_tag_to_lid_xyz_, "lid_tag_to_lid_xyz");
-    validateVectorParam(lid_tag_to_lid_rpy_, "lid_tag_to_lid_rpy");
+    validateVectorParam(lid_inner_tag_to_lid_xyz_, "lid_inner_tag_to_lid_xyz");
+    validateVectorParam(lid_inner_tag_to_lid_rpy_, "lid_inner_tag_to_lid_rpy");
+    validateVectorParam(lid_outer_tag_to_lid_xyz_, "lid_outer_tag_to_lid_xyz");
+    validateVectorParam(lid_outer_tag_to_lid_rpy_, "lid_outer_tag_to_lid_rpy");
 
     if (hinge_axis_ != "x" && hinge_axis_ != "y" && hinge_axis_ != "z") {
       throw std::runtime_error("hinge_axis must be one of: x, y, z");
@@ -125,25 +131,102 @@ private:
     }
   }
 
-  double extractHingeAngle(const tf2::Transform& base_tag_T_lid) const
+  double extractHingeAngle(const tf2::Transform& base_tag_T_lid_tag) const
   {
-    tf2::Matrix3x3 rotation(base_tag_T_lid.getRotation());
-    double roll = 0.0, pitch = 0.0, yaw = 0.0;
-    rotation.getRPY(roll, pitch, yaw);
+    const tf2::Matrix3x3 R(base_tag_T_lid_tag.getRotation());
 
-    double angle = 0.0;
-    if (hinge_axis_ == "x") {
-      angle = roll;
-    } else if (hinge_axis_ == "y") {
-      angle = pitch;
-    } else {
-      angle = yaw;
+    // Tag -> RViz mapping:
+    // tag x = rviz z
+    // tag y = rviz -x
+    // tag z = rviz -y
+    //
+    // Hinge is about rviz x, so in tag coordinates:
+    // rviz x = tag -y
+    const tf2::Vector3 hinge_axis_tag(0.0, -1.0, 0.0);
+    const tf2::Vector3 ref_tag(1.0, 0.0, 0.0);  // rviz z
+
+    tf2::Vector3 base_ref = ref_tag;
+    tf2::Vector3 lid_ref = R * ref_tag;
+
+    base_ref -= hinge_axis_tag * base_ref.dot(hinge_axis_tag);
+    lid_ref  -= hinge_axis_tag * lid_ref.dot(hinge_axis_tag);
+
+    if (base_ref.length2() < 1e-12 || lid_ref.length2() < 1e-12) {
+      return 0.0;
     }
 
-    while (angle < 0.0) angle += 2.0 * M_PI;
-    while (angle > 2.0 * M_PI) angle -= 2.0 * M_PI;
+    base_ref.normalize();
+    lid_ref.normalize();
+
+    const double sin_angle = hinge_axis_tag.dot(lid_ref.cross(base_ref));
+    const double cos_angle = base_ref.dot(lid_ref);
+    double angle = std::atan2(sin_angle, cos_angle);
+
+    if (angle < 0.0) {
+      angle += 2.0 * M_PI;
+    }
+
+    angle = M_PI - angle;
+
+    if (angle < 0.0) {
+      angle += 2.0 * M_PI;
+    }
+    if (angle >= 2.0 * M_PI) {
+      angle -= 2.0 * M_PI;
+    }
+
+    RCLCPP_INFO_THROTTLE(
+    get_logger(), *get_clock(), 1000,
+    "hinge_axis=(%.3f %.3f %.3f) base_ref=(%.3f %.3f %.3f) lid_ref=(%.3f %.3f %.3f) sin=%.3f cos=%.3f angle=%.3f",
+    hinge_axis_tag.x(), hinge_axis_tag.y(), hinge_axis_tag.z(),
+    base_ref.x(), base_ref.y(), base_ref.z(),
+    lid_ref.x(), lid_ref.y(), lid_ref.z(),
+    sin_angle, cos_angle, angle);
 
     return std::clamp(angle, hinge_lower_, hinge_upper_);
+  }
+
+  void publishHingeJoint(
+    const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg,
+    const geometry_msgs::msg::TransformStamped& world_T_lid_tag_msg,
+    bool using_inner_tag)
+  {
+    const tf2::Transform world_T_base_tag = transformMsgToTf(world_T_base_tag_msg.transform);
+    const tf2::Transform world_T_lid_tag = transformMsgToTf(world_T_lid_tag_msg.transform);
+
+    const tf2::Transform base_tag_T_world = world_T_base_tag.inverse();
+    const tf2::Transform base_tag_T_lid_tag = base_tag_T_world * world_T_lid_tag;
+
+    const double hinge_angle = extractHingeAngle(base_tag_T_lid_tag);
+
+    geometry_msgs::msg::TransformStamped dbg_tf;
+    dbg_tf.header.stamp = now();
+    dbg_tf.header.frame_id = base_tag_frame_;
+    dbg_tf.child_frame_id = using_inner_tag ? "real_lid_tag_from_inner" : "real_lid_tag_from_outer";
+    dbg_tf.transform = tfToTransformMsg(base_tag_T_lid_tag);
+    tf_broadcaster_->sendTransform(dbg_tf);
+
+    sensor_msgs::msg::JointState joint_state_msg;
+    joint_state_msg.header.stamp = now();
+    joint_state_msg.name = {hinge_joint_name_};
+    joint_state_msg.position = {hinge_angle};
+    joint_pub_->publish(joint_state_msg);
+
+    RCLCPP_INFO(
+      get_logger(),
+      "RAW hinge_angle=%.6f clamp=[%.6f, %.6f]",
+      hinge_angle, hinge_lower_, hinge_upper_);
+
+    RCLCPP_INFO(
+      get_logger(),
+      "Publishing joint_state position=%.6f",
+      joint_state_msg.position[0]);
+
+    RCLCPP_INFO_THROTTLE(
+      get_logger(), *get_clock(), 1000,
+      "Using %s lid tag, hinge_joint=%.3f rad (%.1f deg)",
+      using_inner_tag ? "INNER" : "OUTER",
+      hinge_angle, hinge_angle * 180.0 / M_PI);
   }
 
   void publishLaptopRoot(const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg)
@@ -160,32 +243,6 @@ private:
     tf_broadcaster_->sendTransform(root_tf);
   }
 
-  void publishHingeJoint(
-    const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg,
-    const geometry_msgs::msg::TransformStamped& world_T_lid_tag_msg)
-  {
-    const tf2::Transform world_T_base_tag = transformMsgToTf(world_T_base_tag_msg.transform);
-    const tf2::Transform world_T_lid_tag = transformMsgToTf(world_T_lid_tag_msg.transform);
-
-    const tf2::Transform base_tag_T_world = world_T_base_tag.inverse();
-    const tf2::Transform base_tag_T_lid_tag = base_tag_T_world * world_T_lid_tag;
-    const tf2::Transform lid_tag_T_lid = makeTransform(lid_tag_to_lid_xyz_, lid_tag_to_lid_rpy_);
-    const tf2::Transform base_tag_T_lid = base_tag_T_lid_tag * lid_tag_T_lid;
-
-    const double hinge_angle = extractHingeAngle(base_tag_T_lid);
-
-    sensor_msgs::msg::JointState joint_state_msg;
-    joint_state_msg.header.stamp = now();
-    joint_state_msg.name = {hinge_joint_name_};
-    joint_state_msg.position = {hinge_angle};
-    joint_pub_->publish(joint_state_msg);
-
-    RCLCPP_INFO_THROTTLE(
-      get_logger(), *get_clock(), 1000,
-      "Published hinge_joint=%.3f rad (%.1f deg)",
-      hinge_angle, hinge_angle * 180.0 / M_PI);
-  }
-
   void update()
   {
     geometry_msgs::msg::TransformStamped world_T_base_tag_msg;
@@ -196,16 +253,27 @@ private:
     publishLaptopRoot(world_T_base_tag_msg);
 
     geometry_msgs::msg::TransformStamped world_T_lid_tag_msg;
-    bool have_lid = lookupTransform(world_frame_, lid_inner_tag_frame_, world_T_lid_tag_msg);
-    if (!have_lid) {
-      have_lid = lookupTransform(world_frame_, lid_outer_tag_frame_, world_T_lid_tag_msg);
-    }
 
-    if (!have_lid) {
+    bool using_inner_tag =
+      lookupTransform(world_frame_, lid_inner_tag_frame_, world_T_lid_tag_msg);
+
+    if (using_inner_tag) {
+      publishHingeJoint(world_T_base_tag_msg, world_T_lid_tag_msg, true);
       return;
     }
 
-    publishHingeJoint(world_T_base_tag_msg, world_T_lid_tag_msg);
+    bool using_outer_tag =
+      lookupTransform(world_frame_, lid_outer_tag_frame_, world_T_lid_tag_msg);
+
+    if (using_outer_tag) {
+      publishHingeJoint(world_T_base_tag_msg, world_T_lid_tag_msg, false);
+      return;
+    }
+
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 2000,
+      "No lid tag visible: neither %s nor %s",
+      lid_inner_tag_frame_.c_str(), lid_outer_tag_frame_.c_str());
   }
 
   std::string world_frame_;
@@ -222,8 +290,10 @@ private:
 
   std::vector<double> base_tag_to_root_xyz_;
   std::vector<double> base_tag_to_root_rpy_;
-  std::vector<double> lid_tag_to_lid_xyz_;
-  std::vector<double> lid_tag_to_lid_rpy_;
+  std::vector<double> lid_inner_tag_to_lid_xyz_;
+  std::vector<double> lid_inner_tag_to_lid_rpy_;
+  std::vector<double> lid_outer_tag_to_lid_xyz_;
+  std::vector<double> lid_outer_tag_to_lid_rpy_;
 
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::TimerBase::SharedPtr timer_;

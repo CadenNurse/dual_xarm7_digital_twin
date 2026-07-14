@@ -136,7 +136,7 @@ def generate_launch_description():
         name="laptop_hinge_state_publisher",
         output="screen",
         parameters=[{
-            "world_frame": "world",
+            "world_frame": "workspace_origin",
             "laptop_root_frame": "laptop_world",
             "base_tag_frame": "tag_laptop_base",
             "lid_inner_tag_frame": "tag_laptop_lid_inner",
@@ -148,8 +148,10 @@ def generate_launch_description():
             "publish_rate_hz": 30.0,
             "base_tag_to_root_xyz": [0.0, 0.0, 0.0],
             "base_tag_to_root_rpy": [1.5708, 3.1416, 1.5708],
-            "lid_tag_to_lid_xyz": [0.0, 0.0, 0.0],
-            "lid_tag_to_lid_rpy": [0.0, 0.0, 0.0],
+            "lid_inner_tag_to_lid_xyz": [0.0, 0.0, 0.0],
+            "lid_inner_tag_to_lid_rpy": [0.0, 0.0, 0.0],
+            "lid_outer_tag_to_lid_xyz": [0.0, 0.0, 0.0],
+            "lid_outer_tag_to_lid_rpy": [0.0, 0.0, 0.0],
         }],
     )
 

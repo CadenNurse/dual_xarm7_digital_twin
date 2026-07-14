@@ -60,7 +60,7 @@
 
   <link name="lid_link">
     <inertial>
-      <origin xyz="0 ${lid_length / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
+      <origin xyz="0 ${lid_width / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
       <mass value="${lid_mass}"/>
       <inertia
         ixx="${(lid_mass / 12.0) * (lid_width * lid_width + lid_thickness * lid_thickness)}"
@@ -71,14 +71,14 @@
         izz="${(lid_mass / 12.0) * (lid_length * lid_length + lid_width * lid_width)}"/>
     </inertial>
     <visual>
-      <origin xyz="0 ${lid_length / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
+      <origin xyz="0 ${lid_width/ 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
       <geometry>
         <box size="${lid_length} ${lid_width} ${lid_thickness}"/>
       </geometry>
       <material name="lid_blue"/>
     </visual>
     <collision>
-      <origin xyz="0 ${lid_length / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
+      <origin xyz="0 ${lid_width / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
       <geometry>
         <box size="${lid_length} ${lid_width} ${lid_thickness}"/>
       </geometry>

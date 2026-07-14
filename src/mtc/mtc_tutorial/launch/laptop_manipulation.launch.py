@@ -104,14 +104,6 @@ def generate_launch_description():
             "robot_description_planning": moveit_params["robot_description_planning"],
             "planning_pipelines": moveit_params["planning_pipelines"],
             "ompl": moveit_params["ompl"],
-            "world_frame": "workspace_origin",
-            "base_tag_frame": "tag_laptop_base",
-            "object_id": "laptop_base",
-            "base_length": 0.305,
-            "base_width": 0.217,
-            "base_thickness": 0.015,
-            "base_tag_to_object_xyz": [0.0, 0.0, 0.0],
-            "base_tag_to_object_rpy": [0.0, 0.0, 0.0],
         }],
     )
 
@@ -142,16 +134,11 @@ def generate_launch_description():
             "lid_inner_tag_frame": "tag_laptop_lid_inner",
             "lid_outer_tag_frame": "tag_laptop_lid_outer",
             "hinge_joint_name": "hinge_joint",
-            "hinge_axis": "x",
             "hinge_lower": 0.0,
-            "hinge_upper": 3.14159265359,
-            "publish_rate_hz": 30.0,
+            "hinge_upper": 3.1416,
+            "publish_rate_hz": 10.0,
             "base_tag_to_root_xyz": [0.0, 0.0, 0.0],
             "base_tag_to_root_rpy": [1.5708, 3.1416, 1.5708],
-            "lid_inner_tag_to_lid_xyz": [0.0, 0.0, 0.0],
-            "lid_inner_tag_to_lid_rpy": [0.0, 0.0, 0.0],
-            "lid_outer_tag_to_lid_xyz": [0.0, 0.0, 0.0],
-            "lid_outer_tag_to_lid_rpy": [0.0, 0.0, 0.0],
         }],
     )
 

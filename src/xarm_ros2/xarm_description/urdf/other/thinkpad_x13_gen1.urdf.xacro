@@ -13,7 +13,7 @@
 
   <xacro:property name="hinge_x" value="0.0"/>
   <xacro:property name="hinge_y" value="-0.1085"/>
-  <xacro:property name="hinge_z" value="0.015"/>
+  <xacro:property name="hinge_z" value="${base_thickness}"/>
 
   <material name="base_red">
     <color rgba="1 0 0 1"/>
@@ -23,8 +23,10 @@
     <color rgba="0 0 1 1"/>
   </material>
 
+  <!-- Dummy link for inertia -->
   <link name="laptop_world"/>
 
+  <!-- Base -->
   <link name="laptop_base_link">
     <inertial>
       <origin xyz="0 0 ${base_thickness / 2.0}" rpy="0 0 0"/>
@@ -52,12 +54,14 @@
     </collision>
   </link>
 
+  <!-- Dummy joint to link inertia -->
   <joint name="laptop_world_to_base" type="fixed">
     <parent link="laptop_world"/>
     <child link="laptop_base_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
 
+  <!-- Lid/Screen -->
   <link name="lid_link">
     <inertial>
       <origin xyz="0 ${lid_width / 2.0} ${lid_thickness / 2.0}" rpy="0 0 0"/>
@@ -85,12 +89,46 @@
     </collision>
   </link>
 
+  <!-- Hinge Joint -->
   <joint name="hinge_joint" type="revolute">
     <parent link="laptop_base_link"/>
     <child link="lid_link"/>
     <origin xyz="${hinge_x} ${hinge_y} ${hinge_z}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit lower="0.0" upper="3.1416" effort="1.0" velocity="1.0"/>
+  </joint>
+
+    <!-- Reference frames -->
+  <!-- <link name="hinge"/>
+  <joint name="base_to_hinge" type="fixed">
+    <parent link="base_link"/>
+    <child link="hinge"/>
+    <origin xyz="${hinge_x} ${hinge_y} ${hinge_z}" rpy="0 0 0"/>
+  </joint> -->
+
+    <!-- Base tag centered on top plane of base -->
+     <!-- might need [1.5708, 3.1416, 1.5708] -->
+  <link name="tag_laptop_base"/>
+  <joint name="base_to_base_tag" type="fixed">
+    <parent link="laptop_base_link"/>
+    <child link="tag_laptop_base"/>
+    <origin xyz="0 0 ${base_thickness}" rpy="0 0 0"/> 
+  </joint>
+
+  <!-- Lid outer tag centered on outside plane -->
+  <link name="tag_laptop_lid_inner"/>
+  <joint name="lid_to_inner_tag" type="fixed">
+    <parent link="lid_link"/>
+    <child link="tag_laptop_lid_inner"/>
+    <origin xyz="${lid_length} ${lid_width / 2.0} -${lid_thickness}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Lid inner tag centered on inside plane -->
+  <link name="tag_laptop_lid_outer"/>
+  <joint name="lid_to_outer_tag" type="fixed">
+    <parent link="lid_link"/>
+    <child link="tag_laptop_lid_outer"/>
+    <origin xyz="${lid_length} ${lid_width / 2.0} ${lid_thickness}" rpy="3.14159265359 3.14159265359 0"/>
   </joint>
 
 </robot>

@@ -62,9 +62,9 @@ constexpr char kHomePose[] = "prepare_L";
 
 constexpr std::size_t kMaxPlanSolutions = 35;
 
-constexpr double kTopOffsetY = 0.07;
-constexpr double kBackoffZ = 0.035;
-constexpr double kLateralX = 0.0;
+constexpr double klateralY = 0.0;
+constexpr double kverticleZ = 0.08;
+constexpr double knormalX = -0.04;
 
 constexpr double kTargetAngleRad = 0.30;
 constexpr double kHingeToContactM = 0.14;
@@ -220,35 +220,48 @@ bool MTCTaskNode::getLaptopTargetPose(geometry_msgs::msg::PoseStamped& target_po
     return false;
   }
 
-  const Eigen::Isometry3d T_screen = tf2::transformToEigen(tf_screen.transform);
-  const Eigen::Isometry3d T_base = tf2::transformToEigen(tf_base.transform);
+  const Eigen::Isometry3d T_screen = tf2::transformToEigen(tf_screen.transform); // pose of screen tag in world frame
+  const Eigen::Isometry3d T_base = tf2::transformToEigen(tf_base.transform); // pose of base tag in world frame
 
-  const Eigen::Vector3d tag_x_world = T_screen.rotation().col(0);
-  const Eigen::Vector3d tag_y_world = T_screen.rotation().col(1);
-  const Eigen::Vector3d tag_z_world = T_screen.rotation().col(2);
+  const Eigen::Vector3d tag_x_world = T_screen.rotation().col(0); // tag local x axis as seen in rviz
+  const Eigen::Vector3d tag_y_world = T_screen.rotation().col(1); // tag local y axis as seen in rviz
+  const Eigen::Vector3d tag_z_world = T_screen.rotation().col(2); // tag local z axis as seen in rviz
 
-  Eigen::Isometry3d T_target = T_screen;
+  Eigen::Isometry3d T_target = T_screen; // offset pose
   T_target.translation() +=
-      tag_x_world * kLateralX +
-      tag_y_world * kTopOffsetY +
-      tag_z_world * kBackoffZ;
+      tag_x_world * knormalX + // shift by _x
+      tag_y_world * klateralY + // shift by _y
+      tag_z_world * kverticleZ; // shift by _z
 
-  Eigen::Vector3d tool_z = -tag_z_world.normalized();
-  Eigen::Vector3d tool_y = tag_y_world.normalized();
-  Eigen::Vector3d tool_x = tool_y.cross(tool_z).normalized();
-  tool_y = tool_z.cross(tool_x).normalized();
+  // tool orientation
+  Eigen::Vector3d tool_z = tag_x_world.normalized(); // tool z-axis should point towards tag +x-axis
+  Eigen::Vector3d tool_y = tag_y_world.normalized(); // tool y-axis should point towards tag +y-axis
+  Eigen::Vector3d tool_x = tool_y.cross(tool_z).normalized(); // tool x-axis should point towards tag +z-axis
+  tool_y = tool_z.cross(tool_x).normalized(); // recompute y to ensure mutually orthogonal
+  
 
-  Eigen::Matrix3d R_target;
+  // // if pushing along tool x axis
+  // tool_x = tag_x_world.normalized();
+  // tool_y = tag_y_world.normalized();
+  // tool_z = tool_x.cross(tool_y).normalized();
+  // tool_y = tool_z.cross(tool_x).normalized();
+
+  Eigen::Matrix3d R_target; // replace rotation parts of T_target with tool frame 
   R_target.col(0) = tool_x;
   R_target.col(1) = tool_y;
   R_target.col(2) = tool_z;
-  T_target.linear() = R_target;
 
-  target_pose.header.frame_id = kWorldFrame;
+  Eigen::Matrix3d R_offset = // rotate 15 degrees around the tool y axis
+    Eigen::AngleAxisd(15.0 * M_PI / 180.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+
+  T_target.linear() = R_target * R_offset;
+
+  target_pose.header.frame_id = kWorldFrame; // Eigen to ROS PoseStamped
   target_pose.header.stamp = node_->now();
   target_pose.pose = tf2::toMsg(T_target);
 
-  const double remaining_angle = std::max(0.0, snapshot.lid_angle_rad - kTargetAngleRad);
+  // calc to find out how much more it must move before "close enough"
+  const double remaining_angle = std::max(0.0, snapshot.lid_angle_rad - kTargetAngleRad); 
   push_distance = std::clamp(kHingeToContactM * remaining_angle, 0.0, kMaxPushDistanceM);
 
   RCLCPP_INFO(

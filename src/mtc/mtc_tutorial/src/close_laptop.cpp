@@ -10,6 +10,7 @@
 #include <moveit/task_constructor/stages/connect.h>
 #include <moveit/task_constructor/stages/move_relative.h>
 #include <moveit_msgs/msg/move_it_error_codes.hpp>
+#include <moveit/task_constructor/cost_terms.h> //BEST DECISON EVER
 
 #include <std_srvs/srv/trigger.hpp>
 
@@ -60,15 +61,15 @@ constexpr char kHandGroup[] = "L_xarm_gripper";
 constexpr char kHandFrame[] = "L_link_tcp";
 constexpr char kHomePose[] = "prepare_L";
 
-constexpr std::size_t kMaxPlanSolutions = 40;
+constexpr std::size_t kMaxPlanSolutions = 45;
 
 constexpr double klateralY = 0.0;
 constexpr double kverticleZ = 0.08;
-constexpr double knormalX = -0.02;
+constexpr double knormalX = -0.025;
 
 constexpr double kTargetAngleRad = 0.15;
 constexpr double kHingeToContactM = 0.14;
-constexpr double kMaxPushDistanceM = 0.20;
+constexpr double kMaxPushDistanceM = 0.25;
 
 constexpr double kStartupDelaySec = 2.0;
 constexpr double kWaitForAngleTimeoutSec = 5.0;
@@ -265,7 +266,7 @@ bool MTCTaskNode::getLaptopTargetPose(geometry_msgs::msg::PoseStamped& target_po
 
   // calc to find out how much more it must move before "close enough"
   const double remaining_angle = std::max(0.0, snapshot.lid_angle_rad - kTargetAngleRad); 
-  push_distance = std::clamp(kHingeToContactM * remaining_angle + 0.04, 0.0, kMaxPushDistanceM);
+  push_distance = std::clamp(kHingeToContactM * remaining_angle + 0.08, 0.0, kMaxPushDistanceM);
 
   RCLCPP_INFO(
       LOGGER,
@@ -427,11 +428,11 @@ mtc::Task MTCTaskNode::createTask()
   auto cartesian_planner = std::make_shared<mtc::solvers::CartesianPath>();
 
   sampling_planner->setPlannerId("ompl", "RRTConnect");
-  sampling_planner->setProperty("max_velocity_scaling_factor", 0.20);
-  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.20);
+  sampling_planner->setProperty("max_velocity_scaling_factor", 0.30);
+  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.30);
 
-  cartesian_planner->setMaxVelocityScalingFactor(0.10);
-  cartesian_planner->setMaxAccelerationScalingFactor(0.10);
+  cartesian_planner->setMaxVelocityScalingFactor(0.12);
+  cartesian_planner->setMaxAccelerationScalingFactor(0.12);
   cartesian_planner->setStepSize(0.002);
 
   auto current_state_stage = std::make_unique<mtc::stages::CurrentState>("current");
@@ -458,6 +459,7 @@ mtc::Task MTCTaskNode::createTask()
         mtc::stages::Connect::GroupPlannerVector{ { kArmGroup, sampling_planner } });
     stage->setTimeout(15.0);
     stage->properties().configureInitFrom(mtc::Stage::PARENT);
+    stage->setCostTerm(mtc::cost::LinkMotion(kHandFrame));
     task.add(std::move(stage));
   }
 
@@ -482,7 +484,7 @@ mtc::Task MTCTaskNode::createTask()
     stage->setIKFrame(kHandFrame);
     stage->properties().set("marker_ns", "push_close");
 
-    const double min_dist = std::max(0.0, push_distance * 0.90);
+    const double min_dist = std::max(0.0, push_distance * 0.95);
     stage->setMinMaxDistance(min_dist, push_distance);
 
     geometry_msgs::msg::Vector3Stamped vec;
@@ -490,6 +492,7 @@ mtc::Task MTCTaskNode::createTask()
     vec.vector.z = 1.0;
     stage->setDirection(vec);
 
+    stage->setCostTerm(mtc::cost::LinkMotion(kHandFrame));
     task.add(std::move(stage));
   }
 

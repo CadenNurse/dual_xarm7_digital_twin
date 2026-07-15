@@ -219,7 +219,7 @@ private:
     joint_pub_->publish(msg);
 
     RCLCPP_INFO_THROTTLE(
-      get_logger(), *get_clock(), 1500,
+      get_logger(), *get_clock(), 5000,
       "Using %s tag, hinge_joint=%.3f rad (%.1f deg)",
       using_inner_tag ? "INNER" : "OUTER",
       hinge_angle, hinge_angle * 180.0 / M_PI);

@@ -68,7 +68,7 @@ constexpr double knormalX = -0.04;
 
 constexpr double kTargetAngleRad = 0.30;
 constexpr double kHingeToContactM = 0.14;
-constexpr double kMaxPushDistanceM = 0.10;
+constexpr double kMaxPushDistanceM = 0.20;
 
 constexpr double kStartupDelaySec = 2.0;
 constexpr double kWaitForAngleTimeoutSec = 5.0;
@@ -141,7 +141,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
         }
 
         RCLCPP_INFO_THROTTLE(
-            LOGGER, *node_->get_clock(), 2000,
+            LOGGER, *node_->get_clock(), 3000,
             "hinge_joint angle = %.6f rad", msg->position[0]);
       });
 
@@ -251,10 +251,13 @@ bool MTCTaskNode::getLaptopTargetPose(geometry_msgs::msg::PoseStamped& target_po
   R_target.col(1) = tool_y;
   R_target.col(2) = tool_z;
 
-  Eigen::Matrix3d R_offset = // rotate 15 degrees around the tool y axis
-    Eigen::AngleAxisd(15.0 * M_PI / 180.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+  Eigen::Matrix3d R_flip =
+    Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ()).toRotationMatrix();
 
-  T_target.linear() = R_target * R_offset;
+  Eigen::Matrix3d R_tilt =
+    Eigen::AngleAxisd(-30.0 * M_PI / 180.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+
+  T_target.linear() = R_target * R_flip * R_tilt;
 
   target_pose.header.frame_id = kWorldFrame; // Eigen to ROS PoseStamped
   target_pose.header.stamp = node_->now();
@@ -442,12 +445,12 @@ mtc::Task MTCTaskNode::createTask()
     throw std::runtime_error("Failed to compute laptop target pose from AprilTag/angle data");
   }
 
-  {
-    auto stage = std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
-    stage->setGroup(kHandGroup);
-    stage->setGoal("open");
-    task.add(std::move(stage));
-  }
+  // {
+  //   auto stage = std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
+  //   stage->setGroup(kHandGroup);
+  //   stage->setGoal("open");
+  //   task.add(std::move(stage));
+  // }
 
   {
     auto stage = std::make_unique<mtc::stages::Connect>(

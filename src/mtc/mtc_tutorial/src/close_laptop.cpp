@@ -60,13 +60,13 @@ constexpr char kHandGroup[] = "L_xarm_gripper";
 constexpr char kHandFrame[] = "L_link_tcp";
 constexpr char kHomePose[] = "prepare_L";
 
-constexpr std::size_t kMaxPlanSolutions = 35;
+constexpr std::size_t kMaxPlanSolutions = 40;
 
 constexpr double klateralY = 0.0;
 constexpr double kverticleZ = 0.08;
-constexpr double knormalX = -0.04;
+constexpr double knormalX = -0.02;
 
-constexpr double kTargetAngleRad = 0.30;
+constexpr double kTargetAngleRad = 0.15;
 constexpr double kHingeToContactM = 0.14;
 constexpr double kMaxPushDistanceM = 0.20;
 
@@ -255,7 +255,7 @@ bool MTCTaskNode::getLaptopTargetPose(geometry_msgs::msg::PoseStamped& target_po
     Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ()).toRotationMatrix();
 
   Eigen::Matrix3d R_tilt =
-    Eigen::AngleAxisd(-30.0 * M_PI / 180.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+    Eigen::AngleAxisd(-45.0 * M_PI / 180.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
 
   T_target.linear() = R_target * R_flip * R_tilt;
 
@@ -265,7 +265,7 @@ bool MTCTaskNode::getLaptopTargetPose(geometry_msgs::msg::PoseStamped& target_po
 
   // calc to find out how much more it must move before "close enough"
   const double remaining_angle = std::max(0.0, snapshot.lid_angle_rad - kTargetAngleRad); 
-  push_distance = std::clamp(kHingeToContactM * remaining_angle, 0.0, kMaxPushDistanceM);
+  push_distance = std::clamp(kHingeToContactM * remaining_angle + 0.04, 0.0, kMaxPushDistanceM);
 
   RCLCPP_INFO(
       LOGGER,
@@ -482,7 +482,7 @@ mtc::Task MTCTaskNode::createTask()
     stage->setIKFrame(kHandFrame);
     stage->properties().set("marker_ns", "push_close");
 
-    const double min_dist = std::max(0.0, push_distance * 0.8);
+    const double min_dist = std::max(0.0, push_distance * 0.90);
     stage->setMinMaxDistance(min_dist, push_distance);
 
     geometry_msgs::msg::Vector3Stamped vec;

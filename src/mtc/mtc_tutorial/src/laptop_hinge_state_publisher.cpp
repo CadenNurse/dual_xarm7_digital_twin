@@ -12,6 +12,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
+#include <tf2/time.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -29,9 +30,10 @@ public:
     lid_inner_tag_frame_ = declare_parameter<std::string>("lid_inner_tag_frame", "tag_laptop_lid_inner");
     lid_outer_tag_frame_ = declare_parameter<std::string>("lid_outer_tag_frame", "tag_laptop_lid_outer");
     hinge_joint_name_ = declare_parameter<std::string>("hinge_joint_name", "hinge_joint");
-    publish_rate_hz_ = declare_parameter<double>("publish_rate_hz", 10.0);
+    publish_rate_hz_ = declare_parameter<double>("publish_rate_hz", 30.0);
     hinge_lower_ = declare_parameter<double>("hinge_lower", 0.0);
     hinge_upper_ = declare_parameter<double>("hinge_upper", 3.1416);
+    base_timeout_sec_ = declare_parameter<double>("base_timeout_sec", 5.0);
 
     base_tag_to_root_xyz_ = declare_parameter<std::vector<double>>(
       "base_tag_to_root_xyz", std::vector<double>{0.0, 0.0, 0.0});
@@ -43,7 +45,10 @@ public:
 
     joint_pub_ = create_publisher<sensor_msgs::msg::JointState>("/laptop/joint_states", 10);
 
-    RCLCPP_INFO(get_logger(), "Laptop hinge state publisher constructed");
+    RCLCPP_INFO(
+      get_logger(),
+      "Laptop hinge state publisher constructed (base fallback timeout: %.2f sec)",
+      base_timeout_sec_);
   }
 
   void initialize()
@@ -130,7 +135,7 @@ private:
     tf2::Vector3 lid_ref = R * ref_tag;
 
     base_ref -= hinge_axis_tag * base_ref.dot(hinge_axis_tag);
-    lid_ref  -= hinge_axis_tag * lid_ref.dot(hinge_axis_tag);
+    lid_ref -= hinge_axis_tag * lid_ref.dot(hinge_axis_tag);
 
     if (base_ref.length2() < 1e-12 || lid_ref.length2() < 1e-12) {
       return 0.0;
@@ -178,13 +183,23 @@ private:
     tf_broadcaster_->sendTransform(root_tf);
   }
 
+  bool cachedBaseStillValid(const rclcpp::Time& now) const
+  {
+    if (!has_last_base_tag_) {
+      return false;
+    }
+
+    const rclcpp::Time last_stamp(last_base_tag_msg_.header.stamp);
+    const double age_sec = (now - last_stamp).seconds();
+    return age_sec >= 0.0 && age_sec <= base_timeout_sec_;
+  }
+
   void publishAngle(const geometry_msgs::msg::TransformStamped& world_T_base_tag_msg,
                     const geometry_msgs::msg::TransformStamped& world_T_lid_tag_msg,
                     bool using_inner_tag)
   {
     const tf2::Transform world_T_base_tag = transformMsgToTf(world_T_base_tag_msg.transform);
     const tf2::Transform world_T_lid_tag = transformMsgToTf(world_T_lid_tag_msg.transform);
-
     const tf2::Transform base_tag_T_lid_tag = world_T_base_tag.inverse() * world_T_lid_tag;
 
     double hinge_angle = extractHingeAngle(base_tag_T_lid_tag, using_inner_tag);
@@ -198,13 +213,13 @@ private:
     has_last_hinge_angle_ = true;
 
     sensor_msgs::msg::JointState msg;
-    msg.header.stamp = now();
-    msg.name = {hinge_joint_name_};
-    msg.position = {hinge_angle};
+    msg.header.stamp = world_T_lid_tag_msg.header.stamp;
+    msg.name.push_back(hinge_joint_name_);
+    msg.position.push_back(hinge_angle);
     joint_pub_->publish(msg);
 
     RCLCPP_INFO_THROTTLE(
-      get_logger(), *get_clock(), 1000,
+      get_logger(), *get_clock(), 1500,
       "Using %s tag, hinge_joint=%.3f rad (%.1f deg)",
       using_inner_tag ? "INNER" : "OUTER",
       hinge_angle, hinge_angle * 180.0 / M_PI);
@@ -212,16 +227,24 @@ private:
 
   void update()
   {
+    const rclcpp::Time now = get_clock()->now();
+
     geometry_msgs::msg::TransformStamped world_T_base_tag_msg;
     geometry_msgs::msg::TransformStamped world_T_lid_tag_msg;
 
     const bool have_base = lookupTransform(world_frame_, base_tag_frame_, world_T_base_tag_msg);
+    const bool have_valid_cached_base = cachedBaseStillValid(now);
+
     if (have_base) {
       last_base_tag_msg_ = world_T_base_tag_msg;
       has_last_base_tag_ = true;
       publishLaptopRoot(world_T_base_tag_msg);
-    } else if (has_last_base_tag_) {
+    } else if (have_valid_cached_base) {
       publishLaptopRoot(last_base_tag_msg_);
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 1000,
+        "Base tag missing; reusing cached base pose for up to %.1f sec",
+        base_timeout_sec_);
     }
 
     const bool have_inner = lookupTransform(world_frame_, lid_inner_tag_frame_, world_T_lid_tag_msg);
@@ -229,7 +252,7 @@ private:
       publishAngle(world_T_base_tag_msg, world_T_lid_tag_msg, true);
       return;
     }
-    if (!have_base && has_last_base_tag_ && have_inner) {
+    if (!have_base && have_valid_cached_base && have_inner) {
       publishAngle(last_base_tag_msg_, world_T_lid_tag_msg, true);
       return;
     }
@@ -239,9 +262,18 @@ private:
       publishAngle(world_T_base_tag_msg, world_T_lid_tag_msg, false);
       return;
     }
-    if (!have_base && has_last_base_tag_ && have_outer) {
+    if (!have_base && have_valid_cached_base && have_outer) {
       publishAngle(last_base_tag_msg_, world_T_lid_tag_msg, false);
       return;
+    }
+
+    if (!have_base && has_last_base_tag_ && !have_valid_cached_base) {
+      const rclcpp::Time last_stamp(last_base_tag_msg_.header.stamp);
+      const double age_sec = (now - last_stamp).seconds();
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Base tag missing and cached base expired (age %.2f sec > %.2f sec)",
+        age_sec, base_timeout_sec_);
     }
 
     RCLCPP_WARN_THROTTLE(
@@ -262,6 +294,7 @@ private:
   double publish_rate_hz_;
   double hinge_lower_;
   double hinge_upper_;
+  double base_timeout_sec_;
 
   double last_hinge_angle_ = 0.0;
   bool has_last_hinge_angle_ = false;

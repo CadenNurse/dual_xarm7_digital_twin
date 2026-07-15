@@ -136,8 +136,8 @@ def generate_launch_description():
             "hinge_joint_name": "hinge_joint",
             "hinge_lower": 0.0,
             "hinge_upper": 3.1416,
-            "publish_rate_hz": 10.0,
-            "base_tag_to_root_xyz": [0.0, 0.0, 0.0],
+            "publish_rate_hz": 30.0,
+            "base_tag_to_root_xyz": [-0.013, 0.0, 0.0],
             "base_tag_to_root_rpy": [1.5708, 3.1416, 1.5708],
         }],
     )
@@ -145,5 +145,5 @@ def generate_launch_description():
     return LaunchDescription([
         laptop_state_publisher,
         laptop_hinge_state_publisher_node,
-        # close_laptop_node,
+        close_laptop_node,
     ])

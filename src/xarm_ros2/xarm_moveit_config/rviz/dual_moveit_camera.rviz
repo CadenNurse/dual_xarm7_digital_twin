@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Image1/Topic1
-        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.46875
     Tree Height: 335
@@ -657,20 +656,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        laptop_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        laptop_world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        lid_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Mass Properties:
         Inertia: false
         Mass: false
@@ -1041,239 +1026,37 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /robot_description
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        laptop_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        laptop_world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        lid_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Mass Properties:
         Inertia: false
         Mass: false
       Name: Laptop
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Class: rviz_default_plugins/TF
-      Enabled: true
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        G_camera_base_link:
-          Value: false
-        G_camera_color_frame:
-          Value: false
-        G_camera_color_optical_frame:
-          Value: false
-        G_camera_depth_frame:
-          Value: false
-        G_camera_depth_optical_frame:
-          Value: false
-        G_camera_link:
-          Value: false
-        L_camera_botter_screw_frame:
-          Value: false
-        L_camera_color_frame:
-          Value: false
-        L_camera_color_optical_frame:
-          Value: false
-        L_camera_depth_frame:
-          Value: false
-        L_camera_link:
-          Value: false
-        L_left_finger:
-          Value: false
-        L_left_inner_knuckle:
-          Value: false
-        L_left_outer_knuckle:
-          Value: false
-        L_link1:
-          Value: false
-        L_link2:
-          Value: false
-        L_link3:
-          Value: false
-        L_link4:
-          Value: false
-        L_link5:
-          Value: false
-        L_link6:
-          Value: false
-        L_link7:
-          Value: false
-        L_link_base:
-          Value: false
-        L_link_eef:
-          Value: false
-        L_link_tcp:
-          Value: false
-        L_right_finger:
-          Value: false
-        L_right_inner_knuckle:
-          Value: false
-        L_right_outer_knuckle:
-          Value: false
-        L_xarm_gripper_base_link:
-          Value: false
-        R_camera_botter_screw_frame:
-          Value: false
-        R_camera_color_frame:
-          Value: false
-        R_camera_color_optical_frame:
-          Value: false
-        R_camera_depth_frame:
-          Value: false
-        R_camera_link:
-          Value: false
-        R_left_finger:
-          Value: false
-        R_left_inner_knuckle:
-          Value: false
-        R_left_outer_knuckle:
-          Value: false
-        R_link1:
-          Value: false
-        R_link2:
-          Value: false
-        R_link3:
-          Value: false
-        R_link4:
-          Value: false
-        R_link5:
-          Value: false
-        R_link6:
-          Value: false
-        R_link7:
-          Value: false
-        R_link_base:
-          Value: false
-        R_link_eef:
-          Value: false
-        R_link_tcp:
-          Value: false
-        R_right_finger:
-          Value: false
-        R_right_inner_knuckle:
-          Value: false
-        R_right_outer_knuckle:
-          Value: false
-        R_xarm_gripper_base_link:
-          Value: false
-        laptop_base_link:
-          Value: false
-        laptop_world:
-          Value: false
-        lid_link:
-          Value: false
-        tag_2:
-          Value: false
-        tag_3:
-          Value: false
-        tag_4:
-          Value: false
-        tag_5:
-          Value: false
-        tag_laptop_base:
-          Value: true
-        tag_laptop_lid_inner:
-          Value: false
-        tag_laptop_lid_outer:
-          Value: false
-        workspace_origin:
-          Value: false
-        world:
-          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
-        world:
-          G_camera_base_link:
-            G_camera_link:
-              G_camera_depth_frame:
-                G_camera_color_frame:
-                  G_camera_color_optical_frame:
-                    tag_2:
-                      {}
-                    tag_3:
-                      {}
-                    tag_4:
-                      {}
-                    tag_5:
-                      {}
-                    tag_laptop_base:
-                      {}
-                    tag_laptop_lid_inner:
-                      {}
-                    tag_laptop_lid_outer:
-                      {}
-                    workspace_origin:
-                      laptop_world:
-                        laptop_base_link:
-                          lid_link:
-                            {}
-                G_camera_depth_optical_frame:
-                  {}
-          L_link_base:
-            L_link1:
-              L_link2:
-                L_link3:
-                  L_link4:
-                    L_link5:
-                      L_link6:
-                        L_link7:
-                          L_link_eef:
-                            L_camera_link:
-                              L_camera_botter_screw_frame:
-                                {}
-                              L_camera_depth_frame:
-                                L_camera_color_frame:
-                                  L_camera_color_optical_frame:
-                                    {}
-                            L_xarm_gripper_base_link:
-                              L_link_tcp:
-                                {}
-          R_link_base:
-            R_link1:
-              R_link2:
-                R_link3:
-                  R_link4:
-                    R_link5:
-                      R_link6:
-                        R_link7:
-                          R_link_eef:
-                            R_camera_link:
-                              R_camera_botter_screw_frame:
-                                {}
-                              R_camera_depth_frame:
-                                R_camera_color_frame:
-                                  R_camera_color_optical_frame:
-                                    {}
-                            R_xarm_gripper_base_link:
-                              R_link_tcp:
-                                {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1327,18 +1110,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.06405594944953918
-        Y: -0.018987318500876427
-        Z: 0.23042495548725128
+        X: 0.050964709371328354
+        Y: 0.2863086760044098
+        Z: 0.21711455285549164
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.06979711353778839
+      Pitch: 0.404796302318573
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.02722228690981865
+      Yaw: 0.08723028004169464
     Saved: ~
 Window Geometry:
   Displays:

@@ -33,8 +33,7 @@ apriltag_launch = "ros2 launch apriltag_ros apriltag_femto_std.launch.py"
 workspace_origin_broadcaster = "python3 workspace_origin_broadcaster.py"
 
 #MTC
-launch_mtc = "ros2 launch mtc_tutorial laptop_manipulation.launch.py"
-run_close = "ros2 action send_goal /execute_laptop_task bimanual_laptop_msgs/action/ExecuteLaptopTask '{task_name: close_single, use_bimanual: false, lid_angle_goal_deg: 15.0, world_frame: workspace_world, laptop_frame_hint: laptop_nominal}'"
+launch_mtc = "ros2 launch mtc_tutorial pick_place_demo1.launch.py"
 
 [dependencies]
 #Core ROS2 packages

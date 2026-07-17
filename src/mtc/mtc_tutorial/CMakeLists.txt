@@ -73,12 +73,21 @@ ament_target_dependencies(laptop_hinge_state_publisher
   tf2_geometry_msgs
 )
 
+add_executable(pick_place_eff src/pick_place_eff.cpp)
+ament_target_dependencies(pick_place_eff
+  rclcpp
+  moveit_task_constructor_core
+  moveit_core
+  moveit_ros_planning_interface
+)
+
 install(TARGETS
   mtc_node
   mtc_node_pp
   mtc_node_cntrl
   mtc_node_phoff
   mtc_node_shoff
+  pick_place_eff
   close_laptop
   laptop_hinge_state_publisher
   minimal

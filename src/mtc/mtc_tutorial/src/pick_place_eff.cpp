@@ -251,7 +251,7 @@ void MTCTaskNode::doTask()
     return;
   }
 
-  if (!task_.plan(40))
+  if (!task_.plan(50))
   {
     RCLCPP_ERROR_STREAM(LOGGER, "Task planning failed");
     return;
@@ -319,11 +319,11 @@ mtc::Task MTCTaskNode::createTask()
   const std::string connect_planner_id = "RRTConnect";
   sampling_planner->setPlannerId(pipeline_name, connect_planner_id);
 
-  sampling_planner->setProperty("max_velocity_scaling_factor", 0.30);
-  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.30);
+  sampling_planner->setProperty("max_velocity_scaling_factor", 0.50);
+  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.50);
 
-  cartesian_planner->setMaxVelocityScalingFactor(0.30);
-  cartesian_planner->setMaxAccelerationScalingFactor(0.30);
+  cartesian_planner->setMaxVelocityScalingFactor(0.50);
+  cartesian_planner->setMaxAccelerationScalingFactor(0.50);
   cartesian_planner->setStepSize(0.002);
 
   {
@@ -371,6 +371,7 @@ mtc::Task MTCTaskNode::createTask()
       wrapper->setMinSolutionDistance(0.05);
       wrapper->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group" });
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, { "target_pose" });
+      wrapper->setCostTerm(std::make_unique<mtc::cost::Clearance>());
 
       grasp->insert(std::move(wrapper));
     }
@@ -381,7 +382,7 @@ mtc::Task MTCTaskNode::createTask()
       stage->properties().set("marker_ns", "insert_grasp");
       stage->properties().set("link", hand_frame);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
-      stage->setMinMaxDistance(0.06, 0.08);
+      stage->setMinMaxDistance(0.07, 0.09);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = "object";

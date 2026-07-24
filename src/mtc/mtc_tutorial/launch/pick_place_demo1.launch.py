@@ -90,7 +90,7 @@ def generate_launch_description():
 
     pick_place_demo = Node(
         package="mtc_tutorial",
-        executable="pick_place_eff",
+        executable="mtc_node_shoff",
         output="screen",
         arguments=['--ros-args', '--log-level', 'info'],
         parameters=[{

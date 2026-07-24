@@ -7,6 +7,7 @@
 #include <moveit/task_constructor/stages.h>
 #include <moveit_msgs/msg/collision_object.hpp>
 #include <moveit_msgs/msg/move_it_error_codes.hpp>
+#include <moveit/task_constructor/cost_terms.h>
 
 #include <std_srvs/srv/trigger.hpp>
 
@@ -154,6 +155,87 @@ bool MTCTaskNode::lookupObjectTransform(geometry_msgs::msg::TransformStamped& tf
   }
 }
 
+// // self made cost terms
+// struct EndEffectorPathLengthCost
+// {
+//   std::string link_name;
+
+//   double operator()(const mtc::SubTrajectory& sub) const
+//   {
+//     double cost = 0.0;
+//     const auto& traj = sub.trajectory();
+
+//     // Pseudocode; you’d pull robot state / link transforms from traj
+//     Eigen::Vector3d prev_pos;
+//     bool have_prev = false;
+
+//     for (auto& waypoint : traj)
+//     {
+//       // get link pose for link_name from waypoint robot state
+//       Eigen::Isometry3d T = /* robot_state.linkState(link_name).pose() */;
+//       Eigen::Vector3d p = T.translation();
+
+//       if (have_prev)
+//         cost += (p - prev_pos).norm();
+
+//       prev_pos = p;
+//       have_prev = true;
+//     }
+
+//     return cost;
+//   }
+// };
+
+// struct JointRotationCost
+// {
+//   std::string joint_name;
+
+//   double operator()(const mtc::SubTrajectory& sub) const
+//   {
+//     double cost = 0.0;
+//     const auto& traj = sub.trajectory();
+
+//     double prev_q;
+//     bool have_prev = false;
+
+//     for (auto& waypoint : traj)
+//     {
+//       double q = /* waypoint.robot_state().getVariablePosition(joint_name) */;
+//       if (have_prev)
+//         cost += std::abs(q - prev_q);
+
+//       prev_q = q;
+//       have_prev = true;
+//     }
+
+//     return cost;
+//   }
+// };
+
+// struct EefAndJoint7Cost
+// {
+//   std::string tcp_link;
+//   std::string joint7_name;
+//   double w_path = 1.0;
+//   double w_rot  = 1.0;
+
+//   double operator()(const mtc::SubTrajectory& sub) const
+//   {
+//     double path_cost = /* compute TCP path length as above */;
+//     double rot_cost  = /* compute |Δq7| sum as above */;
+//     return w_path * path_cost + w_rot * rot_cost;
+//   }
+// };
+
+// use the below to use composite_cost
+// auto composite_cost = std::make_unique<EefAndJoint7Cost>();
+// composite_cost->tcp_link    = kLeftTcpLink;
+// composite_cost->joint7_name = "L_joint7";
+// composite_cost->w_path      = 1.0;
+// composite_cost->w_rot       = 0.5; // tune ratio
+
+// left_move_handover_stage->setCostTerm(std::move(composite_cost));
+
 void MTCTaskNode::setupPlanningScene()
 {
   geometry_msgs::msg::TransformStamped tf_tag;
@@ -282,20 +364,29 @@ void MTCTaskNode::executeCallback(
       "Execute service called. Executing selected solution with cost %.6f",
       selected_solution_->cost());
 
+  const auto exec_begin = std::chrono::steady_clock::now();
   const auto result = task_.execute(*selected_solution_);
+  const auto exec_end = std::chrono::steady_clock::now();
+  const double execute_block_time =
+      std::chrono::duration<double>(exec_end - exec_begin).count();
+
+  RCLCPP_INFO(LOGGER, "task_.execute() returned after %.3f s", execute_block_time);
 
   if (result.val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS)
   {
     response->success = true;
     response->message = "Execution succeeded";
-    RCLCPP_INFO(LOGGER, "Task execution succeeded");
+    RCLCPP_INFO(LOGGER, "Task execution succeeded in %.3f s", execute_block_time);
     return;
   }
 
   response->success = false;
   response->message = "Task execution failed";
-  RCLCPP_ERROR(LOGGER, "Task execution failed with code %d", result.val);
-
+  RCLCPP_ERROR(
+      LOGGER,
+      "Task execution failed with code %d after %.3f s",
+      result.val,
+      execute_block_time);
 }
 
 mtc::Task MTCTaskNode::createTask()
@@ -324,11 +415,11 @@ mtc::Task MTCTaskNode::createTask()
   auto cartesian_planner = std::make_shared<mtc::solvers::CartesianPath>();
 
   sampling_planner->setPlannerId("ompl", "RRTConnect");
-  sampling_planner->setProperty("max_velocity_scaling_factor", 0.30);
-  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.30);
+  sampling_planner->setProperty("max_velocity_scaling_factor", 0.40);
+  sampling_planner->setProperty("max_acceleration_scaling_factor", 0.40);
 
-  cartesian_planner->setMaxVelocityScalingFactor(0.30);
-  cartesian_planner->setMaxAccelerationScalingFactor(0.30);
+  cartesian_planner->setMaxVelocityScalingFactor(0.40);
+  cartesian_planner->setMaxAccelerationScalingFactor(0.40);
   cartesian_planner->setStepSize(0.005);
   cartesian_planner->setMinFraction(0.90);
 
@@ -382,6 +473,16 @@ mtc::Task MTCTaskNode::createTask()
         "move left to pick",
         mtc::stages::Connect::GroupPlannerVector{{left_arm_group_name, sampling_planner}});
     stage->setTimeout(30.0);
+    stage->setCostTerm(std::make_unique<mtc::cost::PathLength>(
+      std::map<std::string, double>{
+          {"L_joint1", 1.0},
+          {"L_joint2", 1.0},
+          {"L_joint3", 1.0},
+          {"L_joint4", 1.0},
+          {"L_joint5", 1.0},
+          {"L_joint6", 1.0},
+          {"L_joint7", 1.0},
+      }));
     task.add(std::move(stage));
   }
 
@@ -406,7 +507,7 @@ mtc::Task MTCTaskNode::createTask()
           (Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitX()) *
            Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitZ()))
            .toRotationMatrix();
-      grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.08);
+      grasp_tf.translation() = Eigen::Vector3d(0.0, 0.0, 0.06);
 
       auto wrapper =
           std::make_unique<mtc::stages::ComputeIK>("left top grasp IK", std::move(stage));
@@ -467,7 +568,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("lift object with left", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.12, 0.18);
+      stage->setMinMaxDistance(0.05, 0.07);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -504,9 +605,9 @@ mtc::Task MTCTaskNode::createTask()
 
     geometry_msgs::msg::PoseStamped handover_pose;
     handover_pose.header.frame_id = kWorldFrame;
-    handover_pose.pose.position.x = 0.40;
-    handover_pose.pose.position.y = 0.40;
-    handover_pose.pose.position.z = 0.35;
+    handover_pose.pose.position.x = 0.35;
+    handover_pose.pose.position.y = 0.35;
+    handover_pose.pose.position.z = 0.30;
     handover_pose.pose.orientation = quatFromRPY(M_PI_2, 0.0, 0.0); // 90 deg about x (z as they are flipped)
     stage->setPose(handover_pose);
 
@@ -532,6 +633,7 @@ mtc::Task MTCTaskNode::createTask()
             {left_arm_group_name, sampling_planner},
             {right_arm_group_name, sampling_planner}});
     stage->setTimeout(30.0);
+    stage->setCostTerm(std::make_unique<mtc::cost::LinkMotion>(kRightTcpLink));
     task.add(std::move(stage));
   }
 
@@ -566,6 +668,17 @@ mtc::Task MTCTaskNode::createTask()
       wrapper->setMaxIKSolutions(40);
       wrapper->setMinSolutionDistance(0.05);
       wrapper->properties().configureInitFrom(mtc::Stage::INTERFACE, {"target_pose"});
+      wrapper->setCostTerm(std::make_unique<mtc::cost::LinkMotion>(kRightHandGroup));
+      // wrapper->setCostTerm(std::make_unique<mtc::cost::PathLength>(
+      //   std::map<std::string, double>{
+      //       {"R_joint1", 1.0},
+      //       {"R_joint2", 1.0},
+      //       {"R_joint3", 1.0},
+      //       {"R_joint4", 1.0},
+      //       {"R_joint5", 1.0},
+      //       {"R_joint6", 1.0},
+      //       {"R_joint7", 3.0},
+      //   })); // change too linkmpotion
 
       right_handover->insert(std::move(wrapper));
     }
@@ -575,7 +688,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right insert side grasp", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.06, 0.10);
+      stage->setMinMaxDistance(0.08, 0.10);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kObjectId;
@@ -650,7 +763,8 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("left retreat after handover", cartesian_planner);
       stage->setGroup(left_arm_group_name);
       stage->setIKFrame(left_hand_frame);
-      stage->setMinMaxDistance(0.05, 0.08);
+      stage->setMinMaxDistance(0.05, 0.07);
+      stage->setCostTerm(std::make_unique<mtc::cost::Clearance>());
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -665,7 +779,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right retreat after handover", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.05, 0.08);
+      stage->setMinMaxDistance(0.05, 0.07);
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
       vec.vector.y = 1.0;
@@ -723,6 +837,7 @@ mtc::Task MTCTaskNode::createTask()
     auto stage = std::make_unique<mtc::stages::Connect>(
         "move right to place",
         mtc::stages::Connect::GroupPlannerVector{{right_arm_group_name, sampling_planner}});
+  stage->setCostTerm(std::make_unique<mtc::cost::LinkMotion>(kRightTcpLink));
     stage->setTimeout(30.0);
     task.add(std::move(stage));
   }
@@ -793,7 +908,7 @@ mtc::Task MTCTaskNode::createTask()
           std::make_unique<mtc::stages::MoveRelative>("right retreat after place", cartesian_planner);
       stage->setGroup(right_arm_group_name);
       stage->setIKFrame(right_hand_frame);
-      stage->setMinMaxDistance(0.06, 0.10);
+      stage->setMinMaxDistance(0.06, 0.08);
 
       geometry_msgs::msg::Vector3Stamped vec;
       vec.header.frame_id = kWorldFrame;
@@ -810,6 +925,16 @@ mtc::Task MTCTaskNode::createTask()
     auto stage =
         std::make_unique<mtc::stages::MoveTo>("return right to prepare_R", interpolation_planner);
     stage->setGroup(right_arm_group_name);
+    stage->setCostTerm(std::make_unique<mtc::cost::PathLength>(
+      std::map<std::string, double>{
+          {"R_joint1", 1.0},
+          {"R_joint2", 1.0},
+          {"R_joint3", 1.0},
+          {"R_joint4", 1.0},
+          {"R_joint5", 1.0},
+          {"R_joint6", 1.0},
+          {"R_joint7", 2.0},
+      }));
     stage->setGoal(kRightHomePose);
     task.add(std::move(stage));
   }

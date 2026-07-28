@@ -33,7 +33,7 @@ apriltag_launch = "ros2 launch apriltag_ros apriltag_femto_std.launch.py"
 workspace_origin_broadcaster = "python3 workspace_origin_broadcaster.py"
 
 #MTC
-launch_mtc = "ros2 launch mtc_tutorial pick_place_demo1.launch.py"
+launch_mtc = "ros2 launch mtc_tutorial laptop_manipulation.launch.py"
 
 [dependencies]
 #Core ROS2 packages

@@ -31,6 +31,7 @@
 #include <utility>
 #include <limits>
 #include <algorithm>
+#include <iomanip>
 
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -59,7 +60,7 @@ constexpr char kLaptopScreenTagFrame[] = "tag_laptop_lid_inner";
 constexpr char kArmGroup[] = "L_xarm7";
 constexpr char kHandGroup[] = "L_xarm_gripper";
 constexpr char kHandFrame[] = "L_link_tcp";
-constexpr char kHomePose[] = "prepare_L";
+constexpr char kHomePose[] = "hold-up";
 
 constexpr std::size_t kMaxPlanSolutions = 45;
 
@@ -398,19 +399,22 @@ void MTCTaskNode::executeCallback(
       "Execute service called. Executing selected solution with cost %.6f",
       selected_solution_->cost());
 
+  const auto exec_start = std::chrono::steady_clock::now();
   const auto result = task_.execute(*selected_solution_);
+  const auto exec_end = std::chrono::steady_clock::now();
+  const double exec_sec = std::chrono::duration<double>(exec_end - exec_start).count();
 
   if (result.val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS)
   {
     response->success = true;
     response->message = "Execution succeeded";
-    RCLCPP_INFO(LOGGER, "Task execution succeeded");
+    RCLCPP_INFO(LOGGER, "Task execution succeeded in %.3f s", exec_sec);
     return;
   }
 
   response->success = false;
   response->message = "Task execution failed";
-  RCLCPP_ERROR(LOGGER, "Task execution failed with code %d", result.val);
+  RCLCPP_ERROR(LOGGER, "Task execution failed with code %d after %.3f s", result.val, exec_sec);
 }
 
 mtc::Task MTCTaskNode::createTask()

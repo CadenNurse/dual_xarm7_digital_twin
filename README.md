@@ -21,14 +21,16 @@ export nessescities to run ROS2Bridge ¨ export ROS_DISTRO=jazzy , export RMW_IM
 call Isaac Sim ¨ isaacsim
 
 or create a .sh file to run in one line using this format: (Sample is named run_isaacsim.sh in a folder named bin)
-#!/usr/bin/env bash
-set -e
-source ~/env_isaaclab/bin/activate
-export ROS_DISTRO=jazzy
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/cadennurse/env_isaaclab/lib/python3.12/site-packages/isaacsim/exts/isaacsim.ros2.core/jazzy/lib"
-export ROS_DOMAIN_ID=(Your Domain ID)
-isaacsim 
+```bash
+  #!/usr/bin/env bash
+  set -e
+  source ~/env_isaaclab/bin/activate
+  export ROS_DISTRO=jazzy
+  export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/cadennurse/env_isaaclab/lib/python3.12/site-packages/isaacsim/exts/isaacsim.ros2.core/jazzy/lib"
+  export ROS_DOMAIN_ID=(Your Domain ID)
+  isaacsim
+```
 
 and call in your home directory as: ~/bin/run_isaacsim.sh
 (Make sure to link your directory after creating the file by typing in a terminal ¨ chmod -x ~/bin/isaacsim.sh)

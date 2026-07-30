@@ -1,4 +1,4 @@
-# Dual xarm7 Digital Twin
+# Dual Xarm7 Digital Twin
 Utilizing two xarm 7's from UFactory to manipulate objects in a real environment while simultaneously controlling them from Moveit2 using Rviz2 and simulating in Isaac Sim.
 To run either Isaac Sim with Moveit2, or just the Moveit2 standalone to operate the manipulators, do the following.
 

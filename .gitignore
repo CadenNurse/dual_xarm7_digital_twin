@@ -6,3 +6,14 @@ install/
 log/
 Log/
 src/moveit_task_constructor/
+.rules.tmp
+AGENTS.md.tmp
+CLAUDE.md.tmp
+GEMINI.md.tmp
+.augment/rules/perplexity-mcp.md.tmp
+.clinerules/perplexity-mcp.md.tmp
+.cursor/rules/perplexity-mcp.mdc.tmp
+.devin/rules/perplexity-mcp.md.tmp
+.github/instructions/perplexity-mcp.instructions.md.tmp
+.kiro/steering/perplexity-mcp.md.tmp
+.roo/rules/perplexity-mcp.md.tmp

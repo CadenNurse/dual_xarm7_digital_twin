@@ -44,7 +44,9 @@ To utilize the Moveit task Constructor (MTC) task planning, follow these steps:
 
 Decide which task you wish to test (in /xarm_ws/src/mtc/mtc_tutorial/src)  
 pick_place_eff.cpp: Simple left arm pick and place task where the place pose is identical but object pick pose can reside anywhere.  
+
 mtc_node_shoff.cpp: A dual-arm handover using serial containers. Left arm picks object from any pose and brings to handover pose, then the right arm grasps the object during handover, left arm retreats while right arm places the object in a pre-determined pose.  
+
 close_laptop.cpp: A single arm closing of a laptop given the laptop is within reach and the back of the lid is accessible. Closes by pushing the laptop to a hinge angle of 0.3 rads.  
 
 Make sure to edit the launch file (in /xarm_ws/src/mtc/mtc_tutorial/launch)  

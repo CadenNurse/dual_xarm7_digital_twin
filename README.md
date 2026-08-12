@@ -34,7 +34,7 @@ Create a .sh file to run in one line using this format: (Sample code is named "r
   export ROS_DOMAIN_ID=(Your Domain ID)  
   isaacsim   
 ```
-(Make sure to link your directory after creating the file by typing in a terminal: $ chmod -x ~/bin/isaacsim.sh)
+(Make sure to link your directory after creating the file by typing in a terminal: $ chmod -x ~/bin/run_isaacsim.sh)
 and call in your HOME directory as: $ ~/bin/run_isaacsim.sh
 
 

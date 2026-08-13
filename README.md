@@ -30,7 +30,7 @@ Create a .sh file to run in one line using this format: (Sample code is named "r
   source ~/env_isaaclab/bin/activate  
   export ROS_DISTRO=jazzy  
   export RMW_IMPLEMENTATION=rmw_fastrtps_cpp  
-  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/cadennurse/env_isaaclab/lib/python3.12/site-packages/isaacsim/exts/isaacsim.ros2.core/jazzy/lib"  
+  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/user/env_isaaclab/lib/python3.12/site-packages/isaacsim/exts/isaacsim.ros2.core/jazzy/lib"  
   export ROS_DOMAIN_ID=(Your Domain ID)  
   isaacsim   
 ```

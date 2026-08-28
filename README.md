@@ -49,6 +49,9 @@ mtc_node_shoff.cpp: A dual-arm handover using serial containers. Left arm picks 
 
 close_laptop.cpp: A single arm closing of a laptop given the laptop is within reach and the back of the lid is accessible. Closes by pushing the laptop to a hinge angle of 0.3 rads.  
 
+Ensure the AprilTags have been updated in the relevant files under "/xarm_ws/src/apriltag_ros/ 'cfg' and 'launch'".  
+*Some of these files need not be touched depending on your situation, such as no changes in transform creation or camera topic naming.  
+
 Make sure to edit the launch file (in /xarm_ws/src/mtc/mtc_tutorial/launch)  
 pick_place_demo1.launch.py: Use this and edit the ' executable="mtc_node_shoff", ' to, "pick_place_eff", or mtc_node_shoff".  
 *If using close_laptop, just ensure the pixi.toml is corrrect: " launch_mtc = 'ros2 launch mtc_tutorial pick_place_demo1.launch.py" ' to ' launch_mtc = "ros2 launch mtc_tutorial laptop_manniulation.launch.py" '  
